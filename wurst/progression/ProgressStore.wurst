@@ -1,0 +1,52 @@
+package ProgressStore
+import SaveCode
+import Experience
+import Config
+
+/** In-match progression state loaded from save codes / updated on victory. */
+public class ProgressStore
+	static var arthasXp = 0
+	static var thrallXp = 0
+
+	static function arthasLevel() returns int
+		return Experience.levelFromXp(arthasXp)
+
+	static function thrallLevel() returns int
+		return Experience.levelFromXp(thrallXp)
+
+	static function levelFor(string commanderId) returns int
+		if commanderId == Config.ARTHAS_ID
+			return arthasLevel()
+		if commanderId == Config.THRALL_ID
+			return thrallLevel()
+		return 1
+
+	static function xpFor(string commanderId) returns int
+		if commanderId == Config.ARTHAS_ID
+			return arthasXp
+		if commanderId == Config.THRALL_ID
+			return thrallXp
+		return 0
+
+	static function addXp(string commanderId, int amount)
+		if amount <= 0
+			return
+		if commanderId == Config.ARTHAS_ID
+			arthasXp = Experience.clampXp(arthasXp + amount)
+		else if commanderId == Config.THRALL_ID
+			thrallXp = Experience.clampXp(thrallXp + amount)
+
+	static function applySaveCode(string saveCode) returns bool
+		if SaveCode.tryDecode(saveCode) == false
+			return false
+		arthasXp = SaveCode.decodedArthasXp
+		thrallXp = SaveCode.decodedThrallXp
+		// Ensure level floors are respected if xp is low but level was stored higher
+		if Experience.levelFromXp(arthasXp) < SaveCode.decodedArthasLevel
+			arthasXp = Experience.xpToReach(SaveCode.decodedArthasLevel)
+		if Experience.levelFromXp(thrallXp) < SaveCode.decodedThrallLevel
+			thrallXp = Experience.xpToReach(SaveCode.decodedThrallLevel)
+		return true
+
+	static function currentCode() returns string
+		return SaveCode.encode(arthasLevel(), arthasXp, thrallLevel(), thrallXp)

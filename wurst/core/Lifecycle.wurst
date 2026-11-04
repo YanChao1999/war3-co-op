@@ -1,0 +1,21 @@
+package Lifecycle
+
+public enum MissionState
+	LOBBY
+	SELECTING
+	RUNNING
+	VICTORY
+	DEFEAT
+
+public class Lifecycle
+	static var state = MissionState.LOBBY
+	static var elapsed = 0.
+
+	static function setState(MissionState s)
+		state = s
+
+	static function isRunning() returns bool
+		return state == MissionState.RUNNING
+
+	static function isFinished() returns bool
+		return state == MissionState.VICTORY or state == MissionState.DEFEAT

@@ -1,0 +1,45 @@
+package CoopPlayer
+import Config
+import Player
+
+/** Helpers for the two commander slots and the enemy computer. */
+public class CoopPlayer
+	static function commanderPlayer(int slot) returns player
+		return players[slot]
+
+	static function enemyPlayer() returns player
+		return players[Config.ENEMY_SLOT]
+
+	static function isCommanderSlot(player p) returns bool
+		let id = p.getId()
+		return id == Config.COMMANDER_SLOT_A or id == Config.COMMANDER_SLOT_B
+
+	static function isPlaying(player p) returns bool
+		return GetPlayerSlotState(p) == PLAYER_SLOT_STATE_PLAYING
+
+	static function setupAlliances()
+		let a = commanderPlayer(Config.COMMANDER_SLOT_A)
+		let b = commanderPlayer(Config.COMMANDER_SLOT_B)
+		let e = enemyPlayer()
+
+		SetPlayerAlliance(a, b, ALLIANCE_PASSIVE, true)
+		SetPlayerAlliance(b, a, ALLIANCE_PASSIVE, true)
+		SetPlayerAlliance(a, b, ALLIANCE_SHARED_VISION, true)
+		SetPlayerAlliance(b, a, ALLIANCE_SHARED_VISION, true)
+		SetPlayerAlliance(a, b, ALLIANCE_SHARED_CONTROL, false)
+		SetPlayerAlliance(b, a, ALLIANCE_SHARED_CONTROL, false)
+		SetPlayerAlliance(a, b, ALLIANCE_SHARED_XP, true)
+		SetPlayerAlliance(b, a, ALLIANCE_SHARED_XP, true)
+
+		SetPlayerAlliance(a, e, ALLIANCE_PASSIVE, false)
+		SetPlayerAlliance(e, a, ALLIANCE_PASSIVE, false)
+		SetPlayerAlliance(b, e, ALLIANCE_PASSIVE, false)
+		SetPlayerAlliance(e, b, ALLIANCE_PASSIVE, false)
+		SetPlayerState(e, PLAYER_STATE_GIVES_BOUNTY, 1)
+
+		SetPlayerName(e, "Scourge Host")
+		SetPlayerColor(e, PLAYER_COLOR_PURPLE)
+
+	static function giveStartingResources(player p)
+		p.setGold(Config.START_GOLD)
+		p.setLumber(Config.START_LUMBER)

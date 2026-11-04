@@ -1,0 +1,146 @@
+package CommanderSelect
+import Config
+import CoopPlayer
+import CommanderRegistry
+import ProgressStore
+import Lifecycle
+import Player
+import Trigger
+import Printing
+import LastFortress
+import ClosureTimers
+
+/**
+	Lobby selection via chat:
+	-pick arthas | -pick thrall
+	-load W3C-...
+	When both slots have unique commanders, mission starts.
+*/
+public class CommanderSelect
+	static var pickA = ""
+	static var pickB = ""
+	static var started = false
+	static LastFortress mission = null
+
+	static function startLobby()
+		Lifecycle.setState(MissionState.SELECTING)
+		print("|cffffff00Co-op Commanders — The Last Fortress|r")
+		print("Each player: -pick arthas  OR  -pick thrall  (must be unique)")
+		print("Optional: -load W3C-....  to restore progression")
+		print("Solo test: fill both slots, or type -autostart after one pick to mirror the other.")
+		registerChat()
+
+	static function registerChat()
+		for i = 0 to 11
+			let p = players[i]
+			CreateTrigger()
+				..registerPlayerChatEvent(p, "-", false)
+				..addAction(() -> onChat())
+
+	static function onChat()
+		let p = GetTriggerPlayer()
+		let msg = StringCase(GetEventPlayerChatString(), false)
+		if SubString(msg, 0, 5) == "-load"
+			handleLoad(p, msg)
+			return
+		if msg == "-autostart"
+			handleAutostart(p)
+			return
+		if msg == "-status"
+			printStatus(p)
+			return
+		if msg == "-raise" or msg == "-army" or msg == "-elemental" or msg == "-storm"
+			handleAbilityChat(p, msg)
+			return
+		if SubString(msg, 0, 5) == "-pick"
+			handlePick(p, msg)
+
+	static function handleLoad(player p, string msg)
+		let saveCode = trimStart(SubString(msg, 5, StringLength(msg)))
+		if ProgressStore.applySaveCode(saveCode)
+			print("|cff00ff00Progress loaded.|r Arthas Lv " + ProgressStore.arthasLevel().toString() +
+				" | Thrall Lv " + ProgressStore.thrallLevel().toString())
+		else
+			print("|cffff5555Invalid save code.|r")
+
+	static function handlePick(player p, string msg)
+		if started
+			return
+		if CoopPlayer.isCommanderSlot(p) == false
+			print("Only commander slots 1-2 may pick.")
+			return
+		let id = trimStart(SubString(msg, 5, StringLength(msg)))
+		if id != Config.ARTHAS_ID and id != Config.THRALL_ID
+			print("Usage: -pick arthas  OR  -pick thrall")
+			return
+		if p.getId() == Config.COMMANDER_SLOT_A
+			pickA = id
+		else
+			pickB = id
+		print(GetPlayerName(p) + " selected " + id)
+		tryStart()
+
+	static function handleAutostart(player p)
+		if started
+			return
+		if pickA == "" and p.getId() == Config.COMMANDER_SLOT_A
+			pickA = Config.ARTHAS_ID
+		if pickB == "" and p.getId() == Config.COMMANDER_SLOT_B
+			pickB = Config.THRALL_ID
+		// Solo convenience: if only A picked, assign the other commander to B
+		if pickA != "" and pickB == ""
+			if pickA == Config.ARTHAS_ID
+				pickB = Config.THRALL_ID
+			else
+				pickB = Config.ARTHAS_ID
+			print("Auto-assigned slot 2: " + pickB)
+		if pickB != "" and pickA == ""
+			if pickB == Config.ARTHAS_ID
+				pickA = Config.THRALL_ID
+			else
+				pickA = Config.ARTHAS_ID
+			print("Auto-assigned slot 1: " + pickA)
+		tryStart()
+
+	static function tryStart()
+		if started
+			return
+		if pickA == "" or pickB == ""
+			return
+		if pickA == pickB
+			print("|cffff5555Commanders must be unique. Repick.|r")
+			return
+		CommanderRegistry.assign(Config.COMMANDER_SLOT_A, pickA)
+		CommanderRegistry.assign(Config.COMMANDER_SLOT_B, pickB)
+		if CommanderRegistry.uniqueCommanders() == false
+			print("|cffff5555Commander assignment failed.|r")
+			return
+		started = true
+		mission = new LastFortress()
+		mission.initialize()
+		doPeriodically(0.5) (_) ->
+			if mission != null and Lifecycle.isRunning()
+				mission.update(0.5)
+
+	static function handleAbilityChat(player p, string msg)
+		let c = CommanderRegistry.forPlayer(p)
+		if c == null
+			return
+		if msg == "-raise" or msg == "-elemental"
+			c.trySpecialAbility()
+		else if msg == "-army" or msg == "-storm"
+			c.tryUltimate()
+
+	static function printStatus(player p)
+		let c = CommanderRegistry.forPlayer(p)
+		if c == null
+			print("No commander yet. Use -pick arthas/thrall")
+			return
+		print(c.displayName + " Lv " + c.level.toString() + " | " + c.secondaryResourceName() + ": " + c.secondaryResource.toString())
+		print("Save: " + ProgressStore.currentCode())
+
+	static function trimStart(string s) returns string
+		var i = 0
+		while i < StringLength(s) and SubString(s, i, i + 1) == " "
+			i++
+		return SubString(s, i, StringLength(s))

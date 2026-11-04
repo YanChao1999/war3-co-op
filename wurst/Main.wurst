@@ -1,0 +1,10 @@
+package Main
+import CommanderSelect
+import Printing
+import ClosureTimers
+
+init
+	print("|cff88ccffWarcraft III: Co-op Commanders|r")
+	// Delay one tick so player slots / start locations are ready
+	nullTimer() ->
+		CommanderSelect.startLobby()

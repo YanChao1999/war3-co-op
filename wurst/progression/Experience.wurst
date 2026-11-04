@@ -1,0 +1,24 @@
+package Experience
+import Config
+
+/** XP thresholds for commander levels 1..15. */
+public class Experience
+	static function xpToReach(int level) returns int
+		if level <= 1
+			return 0
+		// Mild quadratic curve
+		return (level - 1) * (level - 1) * 80 + (level - 1) * 120
+
+	static function levelFromXp(int xp) returns int
+		var lvl = 1
+		while lvl < Config.MAX_COMMANDER_LEVEL and xp >= xpToReach(lvl + 1)
+			lvl++
+		return lvl
+
+	static function clampXp(int xp) returns int
+		let maxXp = xpToReach(Config.MAX_COMMANDER_LEVEL)
+		if xp < 0
+			return 0
+		if xp > maxXp
+			return maxXp
+		return xp

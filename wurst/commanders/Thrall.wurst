@@ -1,0 +1,69 @@
+package Thrall
+import Commander
+import Config
+import UnitIds
+import Unit
+import Vectors
+import Angle
+import Printing
+
+/** Horde commander — elementals, spirit energy, aggressive orc army. */
+public class Thrall extends Commander
+	construct(player owner)
+		super(owner, Config.THRALL_ID, "Thrall")
+
+	override function heroUnitId() returns int
+		return UnitIds.thrall
+
+	override function workerUnitId() returns int
+		return UnitIds.peon
+
+	override function townHallUnitId() returns int
+		return UnitIds.greathall
+
+	override function secondaryResourceName() returns string
+		return "Spirit Energy"
+
+	override function onMissionStart()
+		setupEconomy(basePos)
+		spawnHero(basePos + vec2(64., -64.))
+		createUnit(owner, UnitIds.grunt, basePos + vec2(200., -100.), 270..fromDeg())
+		createUnit(owner, UnitIds.grunt, basePos + vec2(260., -100.), 270..fromDeg())
+		if hasUnlock(2)
+			createUnit(owner, UnitIds.wolfrider, basePos + vec2(180., -160.), 270..fromDeg())
+		print("|cff99ff99Thrall ready.|r Type -elemental / -storm")
+
+	override function onEnemyKilled(unit killed, vec2 where)
+		addSecondary(Config.SPIRIT_PER_KILL)
+
+	override function trySpecialAbility()
+		if hasUnlock(5) == false
+			print("|cffffcc00Call Elemental unlocks at commander level 5.|r")
+			return
+		if spendSecondary(Config.ELEMENTAL_COST) == false
+			print("|cffff5555Need " + Config.ELEMENTAL_COST.toString() + " Spirit Energy.|r")
+			return
+		if hero == null or not hero.isAlive()
+			return
+		let pos = hero.getPos()
+		createUnit(owner, UnitIds.waterelemental2, pos + vec2(80., 0.), 270..fromDeg())
+			..setTimedLife(45.)
+		print("|cff66ccffElemental summoned!|r Spirit: " + secondaryResource.toString())
+
+	override function tryUltimate()
+		if hasUnlock(10) == false
+			print("|cffffcc00Elemental Storm unlocks at commander level 10.|r")
+			return
+		if spendSecondary(Config.ULTIMATE_COST) == false
+			print("|cffff5555Need " + Config.ULTIMATE_COST.toString() + " Spirit Energy.|r")
+			return
+		if hero == null or not hero.isAlive()
+			return
+		let pos = hero.getPos()
+		for i = 0 to 3
+			let ang = (i * 90.).fromDeg()
+			createUnit(owner, UnitIds.waterelemental3, pos + vec2(160. * ang.cos(), 160. * ang.sin()), 270..fromDeg())
+				..setTimedLife(40.)
+		if hasUnlock(6)
+			createUnit(owner, UnitIds.tauren, pos + vec2(0., -120.), 270..fromDeg())
+		print("|cff66ccffElemental Storm!|r")

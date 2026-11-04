@@ -1,0 +1,42 @@
+package SyncRng
+
+/** Deterministic shared RNG for multiplayer-safe mission variance. */
+public class SyncRng
+	static var seed = 1337
+
+	static function seedFromGame()
+		// Mix player names + map seed-ish values into a shared starting seed.
+		var s = 7919
+		for i = 0 to 11
+			let p = Player(i)
+			if GetPlayerSlotState(p) == PLAYER_SLOT_STATE_PLAYING
+				s = s * 31 + StringHash(GetPlayerName(p))
+				s = s * 17 + GetPlayerId(p) * 97
+		seed = s
+		if seed < 0
+			seed = -seed
+		if seed == 0
+			seed = 1337
+
+	static function nextInt() returns int
+		// Park-Miller LCG
+		seed = (seed * 48271) mod 2147483647
+		if seed <= 0
+			seed = seed + 2147483647
+		return seed
+
+	static function nextInt(int maxExclusive) returns int
+		if maxExclusive <= 1
+			return 0
+		return nextInt() mod maxExclusive
+
+	static function nextInt(int minInclusive, int maxInclusive) returns int
+		if maxInclusive <= minInclusive
+			return minInclusive
+		return minInclusive + nextInt(maxInclusive - minInclusive + 1)
+
+	static function nextReal() returns real
+		return nextInt(10000) * 0.0001
+
+	static function chance(int percent) returns bool
+		return nextInt(100) < percent

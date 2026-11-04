@@ -1,0 +1,180 @@
+package LastFortress
+import Mission
+import Lifecycle
+import Config
+import CoopPlayer
+import SyncRng
+import EnemyDirector
+import CommanderRegistry
+import MissionHud
+import Results
+import Unit
+import UnitIds
+import Vectors
+import Angle
+import Printing
+import Player
+import ClosureEvents
+
+/** MVP mission: defend the fortress for 25 minutes, optional outposts, final boss. */
+public class LastFortress extends Mission
+	static LastFortress active = null
+
+	unit fortress = null
+	unit outpost0 = null
+	unit outpost1 = null
+	unit outpost2 = null
+	bool outpostDead0 = false
+	bool outpostDead1 = false
+	bool outpostDead2 = false
+	int outpostsDestroyed = 0
+	vec2 mapCenter = ZERO2
+	real elapsed = 0.
+	bool finalBossKilled = false
+	bool survivalComplete = false
+
+	override function title() returns string
+		return "The Last Fortress"
+
+	override function initialize()
+		active = this
+		SyncRng.seedFromGame()
+		CoopPlayer.setupAlliances()
+		computeLayout()
+		createFortressAndOutposts()
+		assignBases()
+		CommanderRegistry.startAll()
+		EnemyDirector.configure(mapCenter, mapCenter + vec2(0., 1800.), mapCenter + vec2(1800., 0.), mapCenter + vec2(-1800., 0.))
+		MissionHud.create()
+		MissionHud.refresh(0., 0)
+		registerDeathEvents()
+		Lifecycle.setState(MissionState.RUNNING)
+		print("|cffffff00Defend the fortress for 25:00. Destroy 3 outposts for bonus XP. Survive the final assault.|r")
+		print("Chat: -raise/-army (Arthas)  -elemental/-storm (Thrall)  -status")
+
+	function computeLayout()
+		let r = GetWorldBounds()
+		mapCenter = vec2((GetRectMinX(r) + GetRectMaxX(r)) * 0.5, (GetRectMinY(r) + GetRectMaxY(r)) * 0.5)
+		RemoveRect(r)
+
+	function createFortressAndOutposts()
+		fortress = createUnit(players[Config.COMMANDER_SLOT_A], Config.FORTRESS_UNIT_ID, mapCenter, 270..fromDeg())
+		SetUnitOwner(fortress, players[Config.COMMANDER_SLOT_A], true)
+
+		outpost0 = createUnit(CoopPlayer.enemyPlayer(), Config.OUTPOST_UNIT_ID, mapCenter + vec2(1200., 900.), 270..fromDeg())
+		outpost1 = createUnit(CoopPlayer.enemyPlayer(), Config.OUTPOST_UNIT_ID, mapCenter + vec2(-1200., 900.), 270..fromDeg())
+		outpost2 = createUnit(CoopPlayer.enemyPlayer(), Config.OUTPOST_UNIT_ID, mapCenter + vec2(0., -1400.), 270..fromDeg())
+		guardOutpost(outpost0)
+		guardOutpost(outpost1)
+		guardOutpost(outpost2)
+
+	function guardOutpost(unit u)
+		createUnit(CoopPlayer.enemyPlayer(), UnitIds.ghoul, u.getPos() + vec2(120., 0.), 270..fromDeg())
+		createUnit(CoopPlayer.enemyPlayer(), UnitIds.ghoul, u.getPos() + vec2(-120., 0.), 270..fromDeg())
+		createUnit(CoopPlayer.enemyPlayer(), UnitIds.cryptfiend, u.getPos() + vec2(0., 120.), 270..fromDeg())
+
+	function assignBases()
+		let a = CommanderRegistry.commanderA
+		let b = CommanderRegistry.commanderB
+		if a != null
+			a.basePos = mapCenter + vec2(-700., -400.)
+		if b != null
+			b.basePos = mapCenter + vec2(700., -400.)
+
+	function registerDeathEvents()
+		EventListener.add(EVENT_PLAYER_UNIT_DEATH) ->
+			if active != null
+				active.onAnyDeath()
+
+	function onAnyDeath()
+		if Lifecycle.isRunning() == false
+			return
+		let dying = GetTriggerUnit()
+		let killer = GetKillingUnit()
+		if dying == null
+			return
+
+		if dying == fortress
+			onFortressDestroyed()
+			return
+
+		if outpostDead0 == false and dying == outpost0
+			onOutpostDestroyed(0)
+			return
+		if outpostDead1 == false and dying == outpost1
+			onOutpostDestroyed(1)
+			return
+		if outpostDead2 == false and dying == outpost2
+			onOutpostDestroyed(2)
+			return
+
+		if EnemyDirector.isBoss(dying)
+			onBossKilled()
+			return
+
+		if GetOwningPlayer(dying) == CoopPlayer.enemyPlayer()
+			if killer != null and CoopPlayer.isCommanderSlot(GetOwningPlayer(killer))
+				CommanderRegistry.onEnemyKilled(dying, dying.getPos())
+
+	override function update(real dt)
+		if Lifecycle.isRunning() == false
+			return
+		elapsed += dt
+		Lifecycle.elapsed = elapsed
+		EnemyDirector.update(elapsed)
+		MissionHud.refresh(elapsed, outpostsDestroyed)
+
+		if survivalComplete == false and elapsed >= Config.MISSION_DURATION
+			survivalComplete = true
+			print("|cff00ff00The fortress held for 25 minutes!|r")
+			if checkVictory()
+				finishVictory()
+
+	override function onFortressDestroyed()
+		declareDefeat("The Last Fortress has fallen.")
+		Results.show(false, outpostsDestroyed, elapsed)
+
+	override function onOutpostDestroyed(int index)
+		if index == 0
+			if outpostDead0
+				return
+			outpostDead0 = true
+		else if index == 1
+			if outpostDead1
+				return
+			outpostDead1 = true
+		else
+			if outpostDead2
+				return
+			outpostDead2 = true
+		outpostsDestroyed++
+		print("|cff00ff00Outpost destroyed!|r (" + outpostsDestroyed.toString() + "/3)")
+		CommanderRegistry.awardXp(Config.XP_OUTPOST)
+		MissionHud.refresh(elapsed, outpostsDestroyed)
+
+	override function onBossKilled()
+		finalBossKilled = true
+		EnemyDirector.onBossDied()
+		print("|cff00ff00The Lich is slain!|r")
+		CommanderRegistry.awardXp(Config.XP_BOSS_KILL)
+		if checkVictory()
+			finishVictory()
+
+	override function checkVictory() returns bool
+		if survivalComplete == false
+			return false
+		if EnemyDirector.nextWaveIndex > Config.FINAL_WAVE_INDEX and EnemyDirector.bossAlive
+			return false
+		return true
+
+	function finishVictory()
+		let minutes = (elapsed / 60.).toInt()
+		CommanderRegistry.awardXp(Config.XP_MISSION_COMPLETE + minutes * Config.XP_SURVIVE_MINUTE)
+		declareVictory()
+		Results.show(true, outpostsDestroyed, elapsed)
+
+	function getElapsed() returns real
+		return elapsed
+
+	function getOutpostsDestroyed() returns int
+		return outpostsDestroyed

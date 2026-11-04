@@ -1,0 +1,91 @@
+package EnemyDirector
+import Config
+import CoopPlayer
+import Compositions
+import Waves
+import SyncRng
+import Unit
+import Vectors
+import Angle
+import Printing
+
+public class EnemyDirector
+	static vec2 fortressPos = ZERO2
+	static vec2 spawnNorth = ZERO2
+	static vec2 spawnEast = ZERO2
+	static vec2 spawnWest = ZERO2
+	static var nextWaveIndex = 0
+	static var nextWaveAt = 0.
+	static var bossAlive = false
+	static unit boss = null
+	static var wavesCompleted = 0
+
+	static function configure(vec2 fortress, vec2 north, vec2 east, vec2 west)
+		fortressPos = fortress
+		spawnNorth = north
+		spawnEast = east
+		spawnWest = west
+		nextWaveIndex = 0
+		nextWaveAt = Waves.timeFor(0)
+		bossAlive = false
+		boss = null
+		wavesCompleted = 0
+
+	static function update(real elapsed)
+		if nextWaveIndex >= Config.WAVE_COUNT
+			return
+		if elapsed + 0.01 >= nextWaveAt
+			spawnWave(nextWaveIndex)
+			nextWaveIndex++
+			wavesCompleted++
+			if nextWaveIndex < Config.WAVE_COUNT
+				nextWaveAt = Waves.timeFor(nextWaveIndex)
+
+	static function secondsToNextWave(real elapsed) returns real
+		if nextWaveIndex >= Config.WAVE_COUNT
+			return 0.
+		let remain = nextWaveAt - elapsed
+		if remain < 0.
+			return 0.
+		return remain
+
+	static function spawnWave(int index)
+		let tier = Waves.tierFor(index)
+		let count = Compositions.countForTier(tier)
+		print("|cffff6666" + Waves.labelFor(index) + " incoming!|r")
+		for i = 0 to count - 1
+			let spawn = pickSpawn(index, i)
+			let id = Compositions.unitForTier(tier, i)
+			let u = createUnit(CoopPlayer.enemyPlayer(), id, spawn, angleToFortress(spawn))
+			u.issuePointOrder("attack", fortressPos)
+			if index == Config.FINAL_WAVE_INDEX and i == 0
+				boss = u
+				bossAlive = true
+				print("|cffcc66ffThe Lich has entered the field!|r")
+
+	static function pickSpawn(int waveIndex, int unitIndex) returns vec2
+		if waveIndex == Config.FINAL_WAVE_INDEX
+			switch unitIndex mod 3
+				case 0
+					return spawnNorth
+				case 1
+					return spawnEast
+				default
+					return spawnWest
+		switch SyncRng.nextInt(3)
+			case 0
+				return spawnNorth
+			case 1
+				return spawnEast
+			default
+				return spawnWest
+
+	static function angleToFortress(vec2 origin) returns angle
+		return (fortressPos - origin).getAngle()
+
+	static function onBossDied()
+		bossAlive = false
+		boss = null
+
+	static function isBoss(unit u) returns bool
+		return boss != null and u == boss

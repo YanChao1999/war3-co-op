@@ -1,0 +1,50 @@
+package Waves
+import Config
+import SyncRng
+
+/** Wave schedule for The Last Fortress (seconds from mission start). */
+public class Waves
+	static function timeFor(int index) returns real
+		switch index
+			case 0
+				return 90. + SyncRng.nextInt(0, 20).toReal()
+			case 1
+				return 210. + SyncRng.nextInt(0, 20).toReal()
+			case 2
+				return 360. + SyncRng.nextInt(0, 25).toReal()
+			case 3
+				return 520. + SyncRng.nextInt(0, 25).toReal()
+			case 4
+				return 720. + SyncRng.nextInt(0, 30).toReal()
+			case 5
+				return 900. + SyncRng.nextInt(0, 30).toReal()
+			case 6
+				return 1140. + SyncRng.nextInt(0, 30).toReal()
+			case 7
+				return 1380. + SyncRng.nextInt(0, 20).toReal()
+			default
+				return Config.MISSION_DURATION
+
+	static function tierFor(int index) returns int
+		switch index
+			case 0
+				return 1
+			case 1
+				return 1
+			case 2
+				return 2
+			case 3
+				return 2
+			case 4
+				return 3
+			case 5
+				return 3
+			case 6
+				return 4
+			default
+				return 5
+
+	static function labelFor(int index) returns string
+		if index == Config.FINAL_WAVE_INDEX
+			return "FINAL ASSAULT"
+		return "Wave " + (index + 1).toString()

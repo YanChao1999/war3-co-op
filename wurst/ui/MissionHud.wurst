@@ -1,0 +1,73 @@
+package MissionHud
+import EnemyDirector
+import Lifecycle
+import Config
+import CommanderRegistry
+import Multiboard
+
+public class MissionHud
+	static multiboard board = null
+
+	static function create()
+		board = CreateMultiboard()
+		board.setTitle("The Last Fortress")
+		board.setRowCount(7)
+		board.setColumnCount(2)
+		board.setItemsStyle(true, false)
+		board.setItemsWidth(0.10)
+		board.show()
+
+	static function refresh(real elapsed, int outpostsDestroyed)
+		if board == null
+			return
+		let remainMission = Config.MISSION_DURATION - elapsed
+		let remainClamped = remainMission < 0. ? 0. : remainMission
+		let nextWave = EnemyDirector.secondsToNextWave(elapsed)
+
+		setCell(0, 0, "Mission")
+		setCell(0, 1, formatTime(remainClamped))
+		setCell(1, 0, "Next wave")
+		setCell(1, 1, formatTime(nextWave))
+		setCell(2, 0, "Outposts")
+		setCell(2, 1, outpostsDestroyed.toString() + " / 3")
+		setCell(3, 0, "State")
+		setCell(3, 1, stateLabel())
+
+		let a = CommanderRegistry.commanderA
+		let b = CommanderRegistry.commanderB
+		if a != null
+			setCell(4, 0, a.displayName)
+			setCell(4, 1, a.secondaryResourceName() + ": " + a.secondaryResource.toString())
+		if b != null
+			setCell(5, 0, b.displayName)
+			setCell(5, 1, b.secondaryResourceName() + ": " + b.secondaryResource.toString())
+		setCell(6, 0, "Tip")
+		setCell(6, 1, "-status for details")
+
+	static function setCell(int row, int col, string text)
+		board.getItem(row, col)
+			..setValue(text)
+			..setStyle(true, false)
+			..release()
+
+	static function formatTime(real seconds) returns string
+		let clamped = seconds < 0. ? 0. : seconds
+		let s = clamped.toInt()
+		let mm = s div 60
+		let ss = s mod 60
+		if ss < 10
+			return mm.toString() + ":0" + ss.toString()
+		return mm.toString() + ":" + ss.toString()
+
+	static function stateLabel() returns string
+		switch Lifecycle.state
+			case MissionState.RUNNING
+				return "In Progress"
+			case MissionState.VICTORY
+				return "Victory"
+			case MissionState.DEFEAT
+				return "Defeat"
+			case MissionState.SELECTING
+				return "Select"
+			default
+				return "Lobby"

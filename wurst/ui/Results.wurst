@@ -1,0 +1,21 @@
+package Results
+import ProgressStore
+import Config
+import Printing
+import Unlocks
+
+public class Results
+	static function show(bool victory, int outposts, real elapsed)
+		print("========== MISSION RESULTS ==========")
+		if victory
+			print("|cff00ff00Victory — The Last Fortress holds.|r")
+		else
+			print("|cffff0000Defeat — regroup and try again.|r")
+		print("Time: " + (elapsed / 60.).toInt().toString() + "m  Outposts: " + outposts.toString() + "/3")
+		print("Arthas Lv " + ProgressStore.arthasLevel().toString() + " (XP " + ProgressStore.arthasXp.toString() + ")")
+		print("  Next unlock: " + Unlocks.labelFor(Config.ARTHAS_ID, ProgressStore.arthasLevel() + 1))
+		print("Thrall Lv " + ProgressStore.thrallLevel().toString() + " (XP " + ProgressStore.thrallXp.toString() + ")")
+		print("  Next unlock: " + Unlocks.labelFor(Config.THRALL_ID, ProgressStore.thrallLevel() + 1))
+		print("|cffffff00Save code:|r " + ProgressStore.currentCode())
+		print("Load next game with: -load " + ProgressStore.currentCode())
+		print("=====================================")

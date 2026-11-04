@@ -1,0 +1,52 @@
+package Unlocks
+import Config
+
+/** Level unlock flags for MVP commanders (levels 1-5 shipped). */
+public class Unlocks
+	static function labelFor(string commanderId, int level) returns string
+		if commanderId == Config.ARTHAS_ID
+			return arthasLabel(level)
+		if commanderId == Config.THRALL_ID
+			return thrallLabel(level)
+		return "Unknown"
+
+	static function arthasLabel(int level) returns string
+		switch level
+			case 1
+				return "Scourge army"
+			case 2
+				return "Necromancers"
+			case 3
+				return "Death Coil mastery"
+			case 4
+				return "Halls of the Dead"
+			case 5
+				return "Raise Dead (commander ability)"
+			case 6
+				return "Abominations (stub)"
+			case 10
+				return "Army of the Damned (ultimate)"
+			default
+				return "Army enhancement"
+
+	static function thrallLabel(int level) returns string
+		switch level
+			case 1
+				return "Horde army"
+			case 2
+				return "Raiders"
+			case 3
+				return "Chain Lightning mastery"
+			case 4
+				return "Spirit Lodge"
+			case 5
+				return "Call Elemental (commander ability)"
+			case 6
+				return "Tauren (stub)"
+			case 10
+				return "Elemental Storm (ultimate)"
+			default
+				return "Army enhancement"
+
+	static function hasUnlock(int level, int required) returns bool
+		return level >= required

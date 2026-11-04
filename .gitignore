@@ -1,0 +1,12 @@
+/_build/
+/.tools/
+/dist/
+*.w3x.bak
+.DS_Store
+wurst.dependencies
+.idea/
+*.class
+*.log
+
+wurst/war3map.j
+wurst/war3map.*

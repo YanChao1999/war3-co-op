@@ -1,0 +1,44 @@
+projectName: war3-coop
+dependencies:
+  - https://github.com/wurstscript/wurstStdlib2
+wc3Patch: v1.31
+buildMapData:
+  name: "WC3 Co-op | The Last Fortress"
+  fileName: coop_last_fortress
+  author: war3-coop
+  scenarioData:
+    description: "Two commanders defend a fortress against the Scourge. Arthas and Thrall."
+    suggestedPlayers: "2"
+  players:
+    - id: 0
+      name: Commander 1
+      race: UNDEAD
+      controller: USER
+      fixedStartLoc: true
+    - id: 1
+      name: Commander 2
+      race: ORC
+      controller: USER
+      fixedStartLoc: true
+    - id: 10
+      name: Scourge
+      race: UNDEAD
+      controller: COMPUTER
+      fixedStartLoc: true
+  forces:
+    - name: Commanders
+      playerIds: [0, 1]
+      flags:
+        allied: true
+        alliedVictory: true
+        sharedVision: true
+        sharedControl: false
+        sharedControlAdvanced: false
+    - name: Enemy
+      playerIds: [10]
+      flags:
+        allied: true
+        alliedVictory: true
+        sharedVision: true
+        sharedControl: false
+        sharedControlAdvanced: false

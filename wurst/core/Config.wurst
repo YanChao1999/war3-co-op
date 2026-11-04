@@ -1,0 +1,36 @@
+package Config
+import UnitIds
+
+/** Shared constants for the MVP mission and commanders. */
+public class Config
+	static constant MISSION_DURATION = 1500. // 25 minutes
+	static constant START_GOLD = 850
+	static constant START_LUMBER = 400
+	static constant COMMANDER_SLOT_A = 0
+	static constant COMMANDER_SLOT_B = 1
+	static constant ENEMY_SLOT = 10
+
+	static constant FORTRESS_UNIT_ID = UnitIds.castle
+	static constant OUTPOST_UNIT_ID = UnitIds.necropolis
+	static constant GOLD_MINE_ID = UnitIds.goldmine
+	static constant MINE_GOLD = 12500
+
+	static constant WAVE_COUNT = 8
+	static constant FINAL_WAVE_INDEX = 7
+
+	static constant MAX_COMMANDER_LEVEL = 15
+	static constant MVP_UNLOCK_LEVEL_CAP = 5
+
+	static constant XP_MISSION_COMPLETE = 400
+	static constant XP_OUTPOST = 80
+	static constant XP_SURVIVE_MINUTE = 12
+	static constant XP_BOSS_KILL = 200
+
+	static constant SOULS_PER_KILL = 1
+	static constant SPIRIT_PER_KILL = 1
+	static constant ULTIMATE_COST = 50
+	static constant RAISE_COST = 8
+	static constant ELEMENTAL_COST = 10
+
+	static constant ARTHAS_ID = "arthas"
+	static constant THRALL_ID = "thrall"

@@ -1,0 +1,65 @@
+package Commander
+import Config
+import ProgressStore
+import Unlocks
+import CoopPlayer
+import Player
+import Unit
+import Vectors
+import Angle
+import Printing
+
+public abstract class Commander
+	player owner
+	string id
+	string displayName
+	unit hero = null
+	int secondaryResource = 0
+	int level = 1
+	vec2 basePos = ZERO2
+
+	construct(player owner, string id, string displayName)
+		this.owner = owner
+		this.id = id
+		this.displayName = displayName
+		this.level = ProgressStore.levelFor(id)
+
+	abstract function heroUnitId() returns int
+	abstract function workerUnitId() returns int
+	abstract function townHallUnitId() returns int
+	abstract function secondaryResourceName() returns string
+	abstract function onMissionStart()
+	abstract function onEnemyKilled(unit killed, vec2 where)
+	abstract function trySpecialAbility()
+	abstract function tryUltimate()
+
+	function setupEconomy(vec2 pos)
+		this.basePos = pos
+		CoopPlayer.giveStartingResources(owner)
+		createUnit(owner, townHallUnitId(), pos, 270..fromDeg())
+		createUnit(owner, workerUnitId(), pos + vec2(128., 0.), 270..fromDeg())
+		createUnit(owner, workerUnitId(), pos + vec2(-128., 0.), 270..fromDeg())
+		createUnit(owner, workerUnitId(), pos + vec2(0., 128.), 270..fromDeg())
+		createUnit(owner, Config.GOLD_MINE_ID, pos + vec2(450., 0.), 270..fromDeg())
+			..setResourceAmount(Config.MINE_GOLD)
+
+	function spawnHero(vec2 pos)
+		hero = createUnit(owner, heroUnitId(), pos, 270..fromDeg())
+		print(GetPlayerName(owner) + " commands " + displayName + " (Lv " + level.toString() + ")")
+
+	function addSecondary(int amount)
+		if amount == 0
+			return
+		secondaryResource = (secondaryResource + amount).clamp(0, 999)
+
+	function spendSecondary(int amount) returns bool
+		if secondaryResource < amount
+			return false
+		secondaryResource -= amount
+		return true
+
+	function hasUnlock(int requiredLevel) returns bool
+		return Unlocks.hasUnlock(level, requiredLevel)
+
+	function onMissionComplete(int xpGain)
+		ProgressStore.addXp(id, xpGain)

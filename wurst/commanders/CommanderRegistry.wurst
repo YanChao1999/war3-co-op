@@ -1,0 +1,62 @@
+package CommanderRegistry
+import Commander
+import Arthas
+import Thrall
+import Config
+import Player
+import Unit
+import Vectors
+
+/** Holds the two active commander instances for the match. */
+public class CommanderRegistry
+	static Commander commanderA = null
+	static Commander commanderB = null
+
+	static function assign(int slot, string commanderId) returns bool
+		let p = players[slot]
+		if commanderId == Config.ARTHAS_ID
+			if slot == Config.COMMANDER_SLOT_A
+				commanderA = new Arthas(p)
+			else
+				commanderB = new Arthas(p)
+			return true
+		if commanderId == Config.THRALL_ID
+			if slot == Config.COMMANDER_SLOT_A
+				commanderA = new Thrall(p)
+			else
+				commanderB = new Thrall(p)
+			return true
+		return false
+
+	static function forPlayer(player p) returns Commander
+		if commanderA != null and commanderA.owner == p
+			return commanderA
+		if commanderB != null and commanderB.owner == p
+			return commanderB
+		return null
+
+	static function bothAssigned() returns bool
+		return commanderA != null and commanderB != null
+
+	static function uniqueCommanders() returns bool
+		if bothAssigned() == false
+			return false
+		return commanderA.id != commanderB.id
+
+	static function startAll()
+		if commanderA != null
+			commanderA.onMissionStart()
+		if commanderB != null
+			commanderB.onMissionStart()
+
+	static function onEnemyKilled(unit killed, vec2 where)
+		if commanderA != null
+			commanderA.onEnemyKilled(killed, where)
+		if commanderB != null
+			commanderB.onEnemyKilled(killed, where)
+
+	static function awardXp(int amount)
+		if commanderA != null
+			commanderA.onMissionComplete(amount)
+		if commanderB != null
+			commanderB.onMissionComplete(amount)

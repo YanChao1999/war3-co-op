@@ -1,0 +1,90 @@
+package Compositions
+import UnitIds
+import SyncRng
+
+/** Enemy unit mixes by wave strength tier. */
+public class Compositions
+	static function unitForTier(int tier, int index) returns int
+		switch tier
+			case 1
+				return infantry(index)
+			case 2
+				return mixedEarly(index)
+			case 3
+				return siegeMix(index)
+			case 4
+				return eliteMix(index)
+			default
+				return bossMix(index)
+
+	static function infantry(int index) returns int
+		switch index mod 3
+			case 0
+				return UnitIds.ghoul
+			case 1
+				return UnitIds.skeletonwarrior
+			default
+				return UnitIds.ghoul
+
+	static function mixedEarly(int index) returns int
+		switch index mod 4
+			case 0
+				return UnitIds.ghoul
+			case 1
+				return UnitIds.cryptfiend
+			case 2
+				return UnitIds.necromancer
+			default
+				return UnitIds.skeletonwarrior
+
+	static function siegeMix(int index) returns int
+		switch index mod 5
+			case 0
+				return UnitIds.abomination
+			case 1
+				return UnitIds.meatwagon
+			case 2
+				return UnitIds.cryptfiend
+			case 3
+				return UnitIds.necromancer
+			default
+				return UnitIds.ghoul
+
+	static function eliteMix(int index) returns int
+		switch index mod 5
+			case 0
+				return UnitIds.abomination
+			case 1
+				return UnitIds.frostwyrm
+			case 2
+				return UnitIds.cryptfiend
+			case 3
+				return UnitIds.necromancer
+			default
+				return UnitIds.meatwagon
+
+	static function bossMix(int index) returns int
+		if index == 0
+			return UnitIds.lich
+		switch index mod 4
+			case 0
+				return UnitIds.abomination
+			case 1
+				return UnitIds.frostwyrm
+			case 2
+				return UnitIds.cryptfiend
+			default
+				return UnitIds.necromancer
+
+	static function countForTier(int tier) returns int
+		switch tier
+			case 1
+				return 4 + SyncRng.nextInt(2)
+			case 2
+				return 6 + SyncRng.nextInt(3)
+			case 3
+				return 8 + SyncRng.nextInt(3)
+			case 4
+				return 10 + SyncRng.nextInt(4)
+			default
+				return 14 + SyncRng.nextInt(4)

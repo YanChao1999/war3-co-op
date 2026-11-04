@@ -1,0 +1,141 @@
+package SaveCode
+import Experience
+import Config
+
+/**
+	Classic-safe progression persistence via typed save codes.
+	Format: W3C-<aLvl><aXpHex3>-<tLvl><tXpHex3>-<checksumHex2>
+	Example: W3C-1000-1000-2B
+*/
+public class SaveCode
+	static constant PREFIX = "W3C-"
+
+	static var lastOk = false
+	static var decodedArthasLevel = 1
+	static var decodedArthasXp = 0
+	static var decodedThrallLevel = 1
+	static var decodedThrallXp = 0
+
+	static function encode(int arthasLevel, int arthasXp, int thrallLevel, int thrallXp) returns string
+		let aXp = Experience.clampXp(arthasXp)
+		let tXp = Experience.clampXp(thrallXp)
+		var aLvl = Experience.levelFromXp(aXp)
+		var tLvl = Experience.levelFromXp(tXp)
+		if arthasLevel > aLvl
+			aLvl = arthasLevel
+		if thrallLevel > tLvl
+			tLvl = thrallLevel
+		aLvl = aLvl.clamp(1, Config.MAX_COMMANDER_LEVEL)
+		tLvl = tLvl.clamp(1, Config.MAX_COMMANDER_LEVEL)
+		let body = toCodePart(aLvl, aXp) + "-" + toCodePart(tLvl, tXp)
+		return PREFIX + body + "-" + toHex2(checksum(body))
+
+	static function tryDecode(string saveCode) returns bool
+		lastOk = false
+		let trimmed = StringCase(trimSpaces(saveCode), true)
+		if StringLength(trimmed) < 8
+			return false
+		if SubString(trimmed, 0, 4) != PREFIX
+			return false
+		let rest = SubString(trimmed, 4, StringLength(trimmed))
+		let p1 = indexOf(rest, "-", 0)
+		if p1 < 0
+			return false
+		let p2 = indexOf(rest, "-", p1 + 1)
+		if p2 < 0
+			return false
+		let partA = SubString(rest, 0, p1)
+		let partT = SubString(rest, p1 + 1, p2)
+		let partSum = SubString(rest, p2 + 1, StringLength(rest))
+		let body = partA + "-" + partT
+		if checksum(body) != fromHex(partSum)
+			return false
+		decodedArthasLevel = fromCodeLevel(partA)
+		decodedArthasXp = fromCodeXp(partA)
+		decodedThrallLevel = fromCodeLevel(partT)
+		decodedThrallXp = fromCodeXp(partT)
+		lastOk = true
+		return true
+
+	static function toCodePart(int level, int xp) returns string
+		return hexChar(level.clamp(1, Config.MAX_COMMANDER_LEVEL)) + toHex3(xp)
+
+	static function fromCodeLevel(string part) returns int
+		if StringLength(part) < 1
+			return 1
+		return hexValue(SubString(part, 0, 1)).clamp(1, Config.MAX_COMMANDER_LEVEL)
+
+	static function fromCodeXp(string part) returns int
+		if StringLength(part) < 2
+			return 0
+		return Experience.clampXp(fromHex(SubString(part, 1, StringLength(part))))
+
+	static function checksum(string body) returns int
+		var h = 17
+		for i = 0 to StringLength(body) - 1
+			h = (h * 31 + StringHash(SubString(body, i, i + 1))) mod 256
+		return h.abs() mod 256
+
+	static function toHex2(int v) returns string
+		let n = v.clamp(0, 255)
+		return hexChar((n div 16) mod 16) + hexChar(n mod 16)
+
+	static function toHex3(int v) returns string
+		let n = v.clamp(0, 4095)
+		return hexChar((n div 256) mod 16) + hexChar((n div 16) mod 16) + hexChar(n mod 16)
+
+	static function fromHex(string s) returns int
+		var acc = 0
+		for i = 0 to StringLength(s) - 1
+			acc = acc * 16 + hexValue(SubString(s, i, i + 1))
+		return acc
+
+	static function hexChar(int v) returns string
+		let n = v mod 16
+		if n < 10
+			return I2S(n)
+		if n == 10
+			return "A"
+		if n == 11
+			return "B"
+		if n == 12
+			return "C"
+		if n == 13
+			return "D"
+		if n == 14
+			return "E"
+		return "F"
+
+	static function hexValue(string c) returns int
+		if c == "A" or c == "a"
+			return 10
+		if c == "B" or c == "b"
+			return 11
+		if c == "C" or c == "c"
+			return 12
+		if c == "D" or c == "d"
+			return 13
+		if c == "E" or c == "e"
+			return 14
+		if c == "F" or c == "f"
+			return 15
+		return S2I(c).clamp(0, 9)
+
+	static function indexOf(string s, string needle, int start) returns int
+		let nlen = StringLength(needle)
+		let slen = StringLength(s)
+		if nlen == 0 or start >= slen
+			return -1
+		for i = start to slen - nlen
+			if SubString(s, i, i + nlen) == needle
+				return i
+		return -1
+
+	static function trimSpaces(string s) returns string
+		var lo = 0
+		var hi = StringLength(s)
+		while lo < hi and SubString(s, lo, lo + 1) == " "
+			lo++
+		while hi > lo and SubString(s, hi - 1, hi) == " "
+			hi--
+		return SubString(s, lo, hi)

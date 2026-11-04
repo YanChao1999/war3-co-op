@@ -1,0 +1,24 @@
+package Mission
+import Lifecycle
+import Printing
+
+public abstract class Mission
+	abstract function title() returns string
+	abstract function initialize()
+	abstract function update(real dt)
+	abstract function onFortressDestroyed()
+	abstract function onOutpostDestroyed(int index)
+	abstract function onBossKilled()
+	abstract function checkVictory() returns bool
+
+	function declareVictory()
+		if Lifecycle.isFinished()
+			return
+		Lifecycle.setState(MissionState.VICTORY)
+		print("|cff00ff00VICTORY!|r The Last Fortress stands!")
+
+	function declareDefeat(string reason)
+		if Lifecycle.isFinished()
+			return
+		Lifecycle.setState(MissionState.DEFEAT)
+		print("|cffff0000DEFEAT:|r " + reason)
