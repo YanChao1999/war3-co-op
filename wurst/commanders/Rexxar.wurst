@@ -1,0 +1,141 @@
+package Rexxar
+import Commander
+import Config
+import CoopPlayer
+import Lifecycle
+import UnitIds
+import Unit
+import Vectors
+import Angle
+import Printing
+import ClosureTimers
+import Player
+
+/**
+	雷克萨 — 《魔兽争霸III：冰封王座》杜隆塔尔建国篇章的冒险小队。
+	无主城产兵、无苦工大军：只有雷克萨、洛坎、陈·风暴烈酒三英雄 + 野外补给。
+*/
+public class Rexxar extends Commander
+	unit heroRexxar = null
+	unit heroRokhan = null
+	unit heroChen = null
+
+	construct(player owner)
+		super(owner, Config.REXXAR_ID, Config.displayNameZh(Config.REXXAR_ID))
+
+	override function heroUnitId() returns int
+		return UnitIds.rexxar
+
+	override function workerUnitId() returns int
+		return UnitIds.peon
+
+	override function townHallUnitId() returns int
+		return UnitIds.greathall
+
+	override function secondaryResourceName() returns string
+		return "羁绊"
+
+	override function onMissionStart()
+		CoopPlayer.giveStartingResources(owner)
+		owner.addGold(500)
+		owner.addLumber(150)
+		// 简易营地标记（不产兵），符合游侠扎营而非开城
+		createUnit(owner, UnitIds.taurentent, basePos, 270..fromDeg())
+		spawnParty(basePos + vec2(64., -64.))
+		startSupplyTicker()
+		print("|cff99ff99雷克萨小队已就绪。|r 无军队——雷克萨/洛坎/陈。-revive 救回同伴 | -beasts 召野兽助战")
+
+	function spawnParty(vec2 pos)
+		heroRexxar = createUnit(owner, UnitIds.rexxar, pos, 270..fromDeg())
+		heroRokhan = createUnit(owner, UnitIds.rokhan, pos + vec2(140., 0.), 270..fromDeg())
+		heroChen = createUnit(owner, UnitIds.pandarenbrewmaster, pos + vec2(-140., 0.), 270..fromDeg())
+		hero = heroRexxar
+		print(GetPlayerName(owner) + " 执掌 " + displayName + "（杜隆塔尔三英·" + level.toString() + "级）")
+
+	function startSupplyTicker()
+		doPeriodically(12.) (_) ->
+			if Lifecycle.isRunning() == false
+				return
+			if GetPlayerSlotState(owner) != PLAYER_SLOT_STATE_PLAYING
+				return
+			owner.addGold(30)
+			owner.addLumber(10)
+
+	override function onEnemyKilled(unit killed, vec2 where)
+		addSecondary(Config.BOND_PER_KILL)
+		healParty(20.)
+
+	override function onAllyDied(unit dying, vec2 where)
+		if dying == heroRexxar or dying == heroRokhan or dying == heroChen
+			print("|cffffaa00同伴倒下：|r " + GetUnitName(dying) + "（-revive 可救回）")
+
+	override function trySpecialAbility()
+		if hasUnlock(5) == false
+			print("|cffffcc00救回同伴需指挥官达到 5 级解锁。|r")
+			return
+		if spendSecondary(Config.REVIVE_COST) == false
+			print("|cffff5555需要 " + Config.REVIVE_COST.toString() + " 羁绊。|r")
+			return
+		if reviveOneFallen() == false
+			print("|cffff5555没有阵亡同伴可救（或全员仍存活）。|r")
+			addSecondary(Config.REVIVE_COST)
+			return
+		print("|cff88ff88同伴归来！|r 羁绊：" + secondaryResource.toString())
+
+	override function tryUltimate()
+		if hasUnlock(10) == false
+			print("|cffffcc00召野兽需指挥官达到 10 级解锁。|r")
+			return
+		if spendSecondary(Config.ULTIMATE_COST) == false
+			print("|cffff5555需要 " + Config.ULTIMATE_COST.toString() + " 羁绊。|r")
+			return
+		let anchor = partyAnchor()
+		// 兽王本色：米莎与刺毛野猪限时助战（非常规产兵）
+		createUnit(owner, UnitIds.misha4, anchor + vec2(0., 100.), 270..fromDeg())
+			..setTimedLife(40.)
+		createUnit(owner, UnitIds.quillbeast3, anchor + vec2(110., 40.), 270..fromDeg())
+			..setTimedLife(35.)
+		createUnit(owner, UnitIds.quillbeast3, anchor + vec2(-110., 40.), 270..fromDeg())
+			..setTimedLife(35.)
+		empowerHero(heroRexxar)
+		empowerHero(heroRokhan)
+		empowerHero(heroChen)
+		print("|cff66cc66野兽奔袭！|r 米莎与野猪限时助战。")
+
+	function reviveOneFallen() returns bool
+		if heroRexxar == null or not heroRexxar.isAlive()
+			heroRexxar = createUnit(owner, UnitIds.rexxar, basePos + vec2(64., -64.), 270..fromDeg())
+			hero = heroRexxar
+			return true
+		if heroRokhan == null or not heroRokhan.isAlive()
+			heroRokhan = createUnit(owner, UnitIds.rokhan, basePos + vec2(140., -64.), 270..fromDeg())
+			return true
+		if heroChen == null or not heroChen.isAlive()
+			heroChen = createUnit(owner, UnitIds.pandarenbrewmaster, basePos + vec2(-140., -64.), 270..fromDeg())
+			return true
+		return false
+
+	function partyAnchor() returns vec2
+		if heroRexxar != null and heroRexxar.isAlive()
+			return heroRexxar.getPos()
+		if heroRokhan != null and heroRokhan.isAlive()
+			return heroRokhan.getPos()
+		if heroChen != null and heroChen.isAlive()
+			return heroChen.getPos()
+		return basePos
+
+	function healParty(real amount)
+		healOne(heroRexxar, amount)
+		healOne(heroRokhan, amount)
+		healOne(heroChen, amount)
+
+	function healOne(unit u, real amount)
+		if u == null or not u.isAlive()
+			return
+		SetUnitState(u, UNIT_STATE_LIFE, GetUnitState(u, UNIT_STATE_LIFE) + amount)
+
+	function empowerHero(unit u)
+		if u == null or not u.isAlive()
+			return
+		SetUnitState(u, UNIT_STATE_LIFE, GetUnitState(u, UNIT_STATE_MAX_LIFE))
+		SetUnitState(u, UNIT_STATE_MANA, GetUnitState(u, UNIT_STATE_MAX_MANA))

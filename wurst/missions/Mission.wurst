@@ -15,7 +15,7 @@ public abstract class Mission
 		if Lifecycle.isFinished()
 			return
 		Lifecycle.setState(MissionState.VICTORY)
-		print("|cff00ff00VICTORY!|r The Last Fortress stands!")
+		print("|cff00ff00胜利！|r 最后的要塞屹立不倒！")
 
 	function declareDefeat(string reason)
 		if Lifecycle.isFinished()

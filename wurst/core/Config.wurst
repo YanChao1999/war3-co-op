@@ -28,9 +28,64 @@ public class Config
 
 	static constant SOULS_PER_KILL = 1
 	static constant SPIRIT_PER_KILL = 1
+	static constant MOON_PER_KILL = 1
+	static constant ARCANE_PER_KILL = 1
+	static constant VENGEANCE_PER_ALLY_DEATH = 3
+	static constant CONSUME_FEL_GAIN = 12
 	static constant ULTIMATE_COST = 50
 	static constant RAISE_COST = 8
 	static constant ELEMENTAL_COST = 10
+	static constant AMBUSH_COST = 10
+	static constant ARCANE_COST = 10
+	static constant BLINK_COST = 8
+	static constant BLINK_RANGE = 550.
+	static constant META_DURATION = 35.
+	static constant BOND_PER_KILL = 2
+	static constant REVIVE_COST = 15
 
 	static constant ARTHAS_ID = "arthas"
 	static constant THRALL_ID = "thrall"
+	static constant TYRANDE_ID = "tyrande"
+	static constant JAINA_ID = "jaina"
+	static constant ILLIDAN_ID = "illidan"
+	static constant WATCHER_ID = "watcher"
+	static constant REXXAR_ID = "rexxar"
+
+	static function isCommanderId(string id) returns bool
+		return id == ARTHAS_ID or id == THRALL_ID or id == TYRANDE_ID or id == JAINA_ID or id == ILLIDAN_ID or id == WATCHER_ID or id == REXXAR_ID
+
+	static function displayNameZh(string id) returns string
+		if id == ARTHAS_ID
+			return "阿尔萨斯"
+		if id == THRALL_ID
+			return "萨尔"
+		if id == TYRANDE_ID
+			return "泰兰德"
+		if id == JAINA_ID
+			return "吉安娜"
+		if id == ILLIDAN_ID
+			return "伊利丹"
+		if id == WATCHER_ID
+			return "守望者"
+		if id == REXXAR_ID
+			return "雷克萨"
+		return id
+
+	/** Map Chinese aliases / english ids to canonical commander id. */
+	static function normalizePick(string raw) returns string
+		let s = StringCase(raw, false)
+		if s == ARTHAS_ID or raw == "阿尔萨斯"
+			return ARTHAS_ID
+		if s == THRALL_ID or raw == "萨尔"
+			return THRALL_ID
+		if s == TYRANDE_ID or raw == "泰兰德"
+			return TYRANDE_ID
+		if s == JAINA_ID or raw == "吉安娜"
+			return JAINA_ID
+		if s == ILLIDAN_ID or raw == "伊利丹"
+			return ILLIDAN_ID
+		if s == WATCHER_ID or s == "maiev" or raw == "守望者" or raw == "玛维"
+			return WATCHER_ID
+		if s == REXXAR_ID or raw == "雷克萨"
+			return REXXAR_ID
+		return ""

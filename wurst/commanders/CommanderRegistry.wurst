@@ -2,6 +2,11 @@ package CommanderRegistry
 import Commander
 import Arthas
 import Thrall
+import Tyrande
+import Jaina
+import Illidan
+import Watcher
+import Rexxar
 import Config
 import Player
 import Unit
@@ -12,21 +17,33 @@ public class CommanderRegistry
 	static Commander commanderA = null
 	static Commander commanderB = null
 
+	static function createCommander(player p, string commanderId) returns Commander
+		if commanderId == Config.ARTHAS_ID
+			return new Arthas(p)
+		if commanderId == Config.THRALL_ID
+			return new Thrall(p)
+		if commanderId == Config.TYRANDE_ID
+			return new Tyrande(p)
+		if commanderId == Config.JAINA_ID
+			return new Jaina(p)
+		if commanderId == Config.ILLIDAN_ID
+			return new Illidan(p)
+		if commanderId == Config.WATCHER_ID
+			return new Watcher(p)
+		if commanderId == Config.REXXAR_ID
+			return new Rexxar(p)
+		return null
+
 	static function assign(int slot, string commanderId) returns bool
 		let p = players[slot]
-		if commanderId == Config.ARTHAS_ID
-			if slot == Config.COMMANDER_SLOT_A
-				commanderA = new Arthas(p)
-			else
-				commanderB = new Arthas(p)
-			return true
-		if commanderId == Config.THRALL_ID
-			if slot == Config.COMMANDER_SLOT_A
-				commanderA = new Thrall(p)
-			else
-				commanderB = new Thrall(p)
-			return true
-		return false
+		let created = createCommander(p, commanderId)
+		if created == null
+			return false
+		if slot == Config.COMMANDER_SLOT_A
+			commanderA = created
+		else
+			commanderB = created
+		return true
 
 	static function forPlayer(player p) returns Commander
 		if commanderA != null and commanderA.owner == p
@@ -55,8 +72,24 @@ public class CommanderRegistry
 		if commanderB != null
 			commanderB.onEnemyKilled(killed, where)
 
+	static function onAllyDied(player owner, unit dying, vec2 where)
+		if commanderA != null and commanderA.owner == owner
+			commanderA.onAllyDied(dying, where)
+		if commanderB != null and commanderB.owner == owner
+			commanderB.onAllyDied(dying, where)
+
 	static function awardXp(int amount)
 		if commanderA != null
 			commanderA.onMissionComplete(amount)
 		if commanderB != null
 			commanderB.onMissionComplete(amount)
+
+	/** Pick a different commander id from the roster for auto-fill. */
+	static function otherCommanderId(string taken) returns string
+		if taken != Config.THRALL_ID
+			return Config.THRALL_ID
+		if taken != Config.TYRANDE_ID
+			return Config.TYRANDE_ID
+		if taken != Config.JAINA_ID
+			return Config.JAINA_ID
+		return Config.ARTHAS_ID

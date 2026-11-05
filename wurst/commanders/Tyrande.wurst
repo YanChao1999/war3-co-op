@@ -1,0 +1,76 @@
+package Tyrande
+import Commander
+import Config
+import UnitIds
+import Unit
+import Vectors
+import Angle
+import Printing
+
+/** 哨兵指挥官 — 月能、伏击与远程压制。 */
+public class Tyrande extends Commander
+	construct(player owner)
+		super(owner, Config.TYRANDE_ID, Config.displayNameZh(Config.TYRANDE_ID))
+
+	override function heroUnitId() returns int
+		return UnitIds.tyrande
+
+	override function workerUnitId() returns int
+		return UnitIds.wisp
+
+	override function townHallUnitId() returns int
+		return UnitIds.treeoflife
+
+	override function secondaryResourceName() returns string
+		return "月能"
+
+	override function onMissionStart()
+		setupEconomy(basePos)
+		spawnHero(basePos + vec2(64., -64.))
+		createUnit(owner, UnitIds.archer, basePos + vec2(200., -100.), 270..fromDeg())
+		createUnit(owner, UnitIds.archer, basePos + vec2(260., -100.), 270..fromDeg())
+		if hasUnlock(2)
+			createUnit(owner, UnitIds.huntress, basePos + vec2(180., -160.), 270..fromDeg())
+		print("|cff99ff99泰兰德已就绪。|r 指令：-ambush / -lunar（伏击 / 月陨）")
+
+	override function onEnemyKilled(unit killed, vec2 where)
+		addSecondary(Config.MOON_PER_KILL)
+
+	override function trySpecialAbility()
+		if hasUnlock(5) == false
+			print("|cffffcc00伏击需指挥官达到 5 级解锁。|r")
+			return
+		if spendSecondary(Config.AMBUSH_COST) == false
+			print("|cffff5555需要 " + Config.AMBUSH_COST.toString() + " 月能。|r")
+			return
+		if hero == null or not hero.isAlive()
+			return
+		let pos = hero.getPos()
+		createUnit(owner, UnitIds.huntress, pos + vec2(90., 40.), 270..fromDeg())
+			..setTimedLife(35.)
+		createUnit(owner, UnitIds.huntress, pos + vec2(-90., 40.), 270..fromDeg())
+			..setTimedLife(35.)
+		createUnit(owner, UnitIds.archer, pos + vec2(0., 110.), 270..fromDeg())
+			..setTimedLife(35.)
+		print("|cff88ff88伏击小队已部署！|r 月能：" + secondaryResource.toString())
+
+	override function tryUltimate()
+		if hasUnlock(10) == false
+			print("|cffffcc00月陨需指挥官达到 10 级解锁。|r")
+			return
+		if spendSecondary(Config.ULTIMATE_COST) == false
+			print("|cffff5555需要 " + Config.ULTIMATE_COST.toString() + " 月能。|r")
+			return
+		if hero == null or not hero.isAlive()
+			return
+		let pos = hero.getPos()
+		for i = 0 to 5
+			let ang = (i * 60.).fromDeg()
+			createUnit(owner, UnitIds.archer, pos + vec2(140. * ang.cos(), 140. * ang.sin()), 270..fromDeg())
+				..setTimedLife(40.)
+		createUnit(owner, UnitIds.chimaera, pos + vec2(0., -160.), 270..fromDeg())
+			..setTimedLife(40.)
+		if hasUnlock(6)
+			createUnit(owner, UnitIds.druidoftheclaw, pos + vec2(120., -120.), 270..fromDeg())
+				..setTimedLife(40.)
+		print("|cffccff66月陨降临！|r")

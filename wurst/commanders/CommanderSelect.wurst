@@ -11,10 +11,9 @@ import LastFortress
 import ClosureTimers
 
 /**
-	Lobby selection via chat:
-	-pick arthas | -pick thrall
-	-load W3C-...
-	When both slots have unique commanders, mission starts.
+	大厅选择（聊天）：
+	-pick arthas|thrall|tyrande|jaina 或中文名
+	-load W3C-... / W3C4-...
 */
 public class CommanderSelect
 	static var pickA = ""
@@ -24,10 +23,10 @@ public class CommanderSelect
 
 	static function startLobby()
 		Lifecycle.setState(MissionState.SELECTING)
-		print("|cffffff00Co-op Commanders — The Last Fortress|r")
-		print("Each player: -pick arthas  OR  -pick thrall  (must be unique)")
-		print("Optional: -load W3C-....  to restore progression")
-		print("Solo test: fill both slots, or type -autostart after one pick to mirror the other.")
+		print("|cffffff00合作指挥官 — 最后的要塞|r")
+		print("选择：-pick arthas/thrall/tyrande/jaina/illidan/watcher/rexxar")
+		print("中文：阿尔萨斯/萨尔/泰兰德/吉安娜/伊利丹/守望者/雷克萨（不可重复）")
+		print("进度：-load W3C7-...    单人：-autostart")
 		registerChat()
 
 	static function registerChat()
@@ -39,9 +38,11 @@ public class CommanderSelect
 
 	static function onChat()
 		let p = GetTriggerPlayer()
-		let msg = StringCase(GetEventPlayerChatString(), false)
+		// Keep original case for Chinese names; only lower english commands.
+		let raw = GetEventPlayerChatString()
+		let msg = StringCase(raw, false)
 		if SubString(msg, 0, 5) == "-load"
-			handleLoad(p, msg)
+			handleLoad(p, raw)
 			return
 		if msg == "-autostart"
 			handleAutostart(p)
@@ -49,35 +50,40 @@ public class CommanderSelect
 		if msg == "-status"
 			printStatus(p)
 			return
-		if msg == "-raise" or msg == "-army" or msg == "-elemental" or msg == "-storm"
+		if msg == "-raise" or msg == "-army" or msg == "-elemental" or msg == "-storm" or msg == "-ambush" or msg == "-lunar" or msg == "-arcane" or msg == "-blizzard" or msg == "-consume" or msg == "-meta" or msg == "-blink" or msg == "-avatar" or msg == "-revive" or msg == "-beasts"
 			handleAbilityChat(p, msg)
 			return
 		if SubString(msg, 0, 5) == "-pick"
-			handlePick(p, msg)
+			handlePick(p, raw)
 
 	static function handleLoad(player p, string msg)
 		let saveCode = trimStart(SubString(msg, 5, StringLength(msg)))
 		if ProgressStore.applySaveCode(saveCode)
-			print("|cff00ff00Progress loaded.|r Arthas Lv " + ProgressStore.arthasLevel().toString() +
-				" | Thrall Lv " + ProgressStore.thrallLevel().toString())
+			print("|cff00ff00进度已载入。|r 阿" + ProgressStore.arthasLevel().toString() +
+				" | 萨" + ProgressStore.thrallLevel().toString() +
+				" | 泰" + ProgressStore.tyrandeLevel().toString() +
+				" | 吉" + ProgressStore.jainaLevel().toString() +
+				" | 伊" + ProgressStore.illidanLevel().toString() +
+				" | 守" + ProgressStore.watcherLevel().toString() +
+				" | 雷" + ProgressStore.rexxarLevel().toString())
 		else
-			print("|cffff5555Invalid save code.|r")
+			print("|cffff5555存档码无效。|r")
 
 	static function handlePick(player p, string msg)
 		if started
 			return
 		if CoopPlayer.isCommanderSlot(p) == false
-			print("Only commander slots 1-2 may pick.")
+			print("仅指挥官槽位 1–2 可选择。")
 			return
-		let id = trimStart(SubString(msg, 5, StringLength(msg)))
-		if id != Config.ARTHAS_ID and id != Config.THRALL_ID
-			print("Usage: -pick arthas  OR  -pick thrall")
+		let id = Config.normalizePick(trimStart(SubString(msg, 5, StringLength(msg))))
+		if id == ""
+			print("用法：-pick .../rexxar（或中文名，含雷克萨）")
 			return
 		if p.getId() == Config.COMMANDER_SLOT_A
 			pickA = id
 		else
 			pickB = id
-		print(GetPlayerName(p) + " selected " + id)
+		print(GetPlayerName(p) + " 选择了 " + Config.displayNameZh(id) + "（" + id + "）")
 		tryStart()
 
 	static function handleAutostart(player p)
@@ -87,19 +93,12 @@ public class CommanderSelect
 			pickA = Config.ARTHAS_ID
 		if pickB == "" and p.getId() == Config.COMMANDER_SLOT_B
 			pickB = Config.THRALL_ID
-		// Solo convenience: if only A picked, assign the other commander to B
 		if pickA != "" and pickB == ""
-			if pickA == Config.ARTHAS_ID
-				pickB = Config.THRALL_ID
-			else
-				pickB = Config.ARTHAS_ID
-			print("Auto-assigned slot 2: " + pickB)
+			pickB = CommanderRegistry.otherCommanderId(pickA)
+			print("自动为槽位2分配：" + Config.displayNameZh(pickB))
 		if pickB != "" and pickA == ""
-			if pickB == Config.ARTHAS_ID
-				pickA = Config.THRALL_ID
-			else
-				pickA = Config.ARTHAS_ID
-			print("Auto-assigned slot 1: " + pickA)
+			pickA = CommanderRegistry.otherCommanderId(pickB)
+			print("自动为槽位1分配：" + Config.displayNameZh(pickA))
 		tryStart()
 
 	static function tryStart()
@@ -108,12 +107,12 @@ public class CommanderSelect
 		if pickA == "" or pickB == ""
 			return
 		if pickA == pickB
-			print("|cffff5555Commanders must be unique. Repick.|r")
+			print("|cffff5555指挥官不可重复，请重新选择。|r")
 			return
 		CommanderRegistry.assign(Config.COMMANDER_SLOT_A, pickA)
 		CommanderRegistry.assign(Config.COMMANDER_SLOT_B, pickB)
 		if CommanderRegistry.uniqueCommanders() == false
-			print("|cffff5555Commander assignment failed.|r")
+			print("|cffff5555指挥官分配失败。|r")
 			return
 		started = true
 		mission = new LastFortress()
@@ -126,18 +125,18 @@ public class CommanderSelect
 		let c = CommanderRegistry.forPlayer(p)
 		if c == null
 			return
-		if msg == "-raise" or msg == "-elemental"
+		if msg == "-raise" or msg == "-elemental" or msg == "-ambush" or msg == "-arcane" or msg == "-consume" or msg == "-blink" or msg == "-revive"
 			c.trySpecialAbility()
-		else if msg == "-army" or msg == "-storm"
+		else if msg == "-army" or msg == "-storm" or msg == "-lunar" or msg == "-blizzard" or msg == "-meta" or msg == "-avatar" or msg == "-beasts"
 			c.tryUltimate()
 
 	static function printStatus(player p)
 		let c = CommanderRegistry.forPlayer(p)
 		if c == null
-			print("No commander yet. Use -pick arthas/thrall")
+			print("尚未选择指挥官。使用 -pick ...（含 illidan/watcher）")
 			return
-		print(c.displayName + " Lv " + c.level.toString() + " | " + c.secondaryResourceName() + ": " + c.secondaryResource.toString())
-		print("Save: " + ProgressStore.currentCode())
+		print(c.displayName + " " + c.level.toString() + "级 | " + c.secondaryResourceName() + "：" + c.secondaryResource.toString())
+		print("存档：" + ProgressStore.currentCode())
 
 	static function trimStart(string s) returns string
 		var i = 0

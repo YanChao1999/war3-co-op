@@ -3,41 +3,81 @@ import Experience
 import Config
 
 /**
-	Classic-safe progression persistence via typed save codes.
-	Format: W3C-<aLvl><aXpHex3>-<tLvl><tXpHex3>-<checksumHex2>
-	Example: W3C-1000-1000-2B
+	存档码：
+	- W3C- / W3C4- / W3C6- / W3C7-（含雷克萨）
 */
 public class SaveCode
 	static constant PREFIX = "W3C-"
+	static constant PREFIX4 = "W3C4-"
+	static constant PREFIX6 = "W3C6-"
+	static constant PREFIX7 = "W3C7-"
 
 	static var lastOk = false
 	static var decodedArthasLevel = 1
 	static var decodedArthasXp = 0
 	static var decodedThrallLevel = 1
 	static var decodedThrallXp = 0
+	static var decodedTyrandeLevel = 1
+	static var decodedTyrandeXp = 0
+	static var decodedJainaLevel = 1
+	static var decodedJainaXp = 0
+	static var decodedIllidanLevel = 1
+	static var decodedIllidanXp = 0
+	static var decodedWatcherLevel = 1
+	static var decodedWatcherXp = 0
+	static var decodedRexxarLevel = 1
+	static var decodedRexxarXp = 0
 
 	static function encode(int arthasLevel, int arthasXp, int thrallLevel, int thrallXp) returns string
-		let aXp = Experience.clampXp(arthasXp)
-		let tXp = Experience.clampXp(thrallXp)
-		var aLvl = Experience.levelFromXp(aXp)
-		var tLvl = Experience.levelFromXp(tXp)
-		if arthasLevel > aLvl
-			aLvl = arthasLevel
-		if thrallLevel > tLvl
-			tLvl = thrallLevel
-		aLvl = aLvl.clamp(1, Config.MAX_COMMANDER_LEVEL)
-		tLvl = tLvl.clamp(1, Config.MAX_COMMANDER_LEVEL)
-		let body = toCodePart(aLvl, aXp) + "-" + toCodePart(tLvl, tXp)
-		return PREFIX + body + "-" + toHex2(checksum(body))
+		return encodeSeven(arthasLevel, arthasXp, thrallLevel, thrallXp, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0)
+
+	static function encodeFour(int arthasLevel, int arthasXp, int thrallLevel, int thrallXp, int tyrandeLevel, int tyrandeXp, int jainaLevel, int jainaXp) returns string
+		return encodeSeven(arthasLevel, arthasXp, thrallLevel, thrallXp, tyrandeLevel, tyrandeXp, jainaLevel, jainaXp, 1, 0, 1, 0, 1, 0)
+
+	static function encodeSix(int arthasLevel, int arthasXp, int thrallLevel, int thrallXp, int tyrandeLevel, int tyrandeXp, int jainaLevel, int jainaXp, int illidanLevel, int illidanXp, int watcherLevel, int watcherXp) returns string
+		return encodeSeven(arthasLevel, arthasXp, thrallLevel, thrallXp, tyrandeLevel, tyrandeXp, jainaLevel, jainaXp, illidanLevel, illidanXp, watcherLevel, watcherXp, 1, 0)
+
+	static function encodeSeven(int arthasLevel, int arthasXp, int thrallLevel, int thrallXp, int tyrandeLevel, int tyrandeXp, int jainaLevel, int jainaXp, int illidanLevel, int illidanXp, int watcherLevel, int watcherXp, int rexxarLevel, int rexxarXp) returns string
+		let body = leveledPart(arthasLevel, arthasXp) + "-" + leveledPart(thrallLevel, thrallXp) + "-" +
+			leveledPart(tyrandeLevel, tyrandeXp) + "-" + leveledPart(jainaLevel, jainaXp) + "-" +
+			leveledPart(illidanLevel, illidanXp) + "-" + leveledPart(watcherLevel, watcherXp) + "-" +
+			leveledPart(rexxarLevel, rexxarXp)
+		return PREFIX7 + body + "-" + toHex2(checksum(body))
+
+	static function leveledPart(int levelHint, int xp) returns string
+		let clampedXp = Experience.clampXp(xp)
+		var lvl = Experience.levelFromXp(clampedXp)
+		if levelHint > lvl
+			lvl = levelHint
+		lvl = lvl.clamp(1, Config.MAX_COMMANDER_LEVEL)
+		return toCodePart(lvl, clampedXp)
 
 	static function tryDecode(string saveCode) returns bool
 		lastOk = false
+		decodedTyrandeLevel = 1
+		decodedTyrandeXp = 0
+		decodedJainaLevel = 1
+		decodedJainaXp = 0
+		decodedIllidanLevel = 1
+		decodedIllidanXp = 0
+		decodedWatcherLevel = 1
+		decodedWatcherXp = 0
+		decodedRexxarLevel = 1
+		decodedRexxarXp = 0
 		let trimmed = StringCase(trimSpaces(saveCode), true)
 		if StringLength(trimmed) < 8
 			return false
+		if SubString(trimmed, 0, 5) == PREFIX7
+			return decodeSeven(SubString(trimmed, 5, StringLength(trimmed)))
+		if SubString(trimmed, 0, 5) == PREFIX6
+			return decodeSix(SubString(trimmed, 5, StringLength(trimmed)))
+		if SubString(trimmed, 0, 5) == PREFIX4
+			return decodeFour(SubString(trimmed, 5, StringLength(trimmed)))
 		if SubString(trimmed, 0, 4) != PREFIX
 			return false
-		let rest = SubString(trimmed, 4, StringLength(trimmed))
+		return decodeTwo(SubString(trimmed, 4, StringLength(trimmed)))
+
+	static function decodeTwo(string rest) returns bool
 		let p1 = indexOf(rest, "-", 0)
 		if p1 < 0
 			return false
@@ -54,6 +94,132 @@ public class SaveCode
 		decodedArthasXp = fromCodeXp(partA)
 		decodedThrallLevel = fromCodeLevel(partT)
 		decodedThrallXp = fromCodeXp(partT)
+		lastOk = true
+		return true
+
+	static function decodeFour(string rest) returns bool
+		let p1 = indexOf(rest, "-", 0)
+		if p1 < 0
+			return false
+		let p2 = indexOf(rest, "-", p1 + 1)
+		if p2 < 0
+			return false
+		let p3 = indexOf(rest, "-", p2 + 1)
+		if p3 < 0
+			return false
+		let p4 = indexOf(rest, "-", p3 + 1)
+		if p4 < 0
+			return false
+		let partA = SubString(rest, 0, p1)
+		let partT = SubString(rest, p1 + 1, p2)
+		let partY = SubString(rest, p2 + 1, p3)
+		let partJ = SubString(rest, p3 + 1, p4)
+		let partSum = SubString(rest, p4 + 1, StringLength(rest))
+		let body = partA + "-" + partT + "-" + partY + "-" + partJ
+		if checksum(body) != fromHex(partSum)
+			return false
+		decodedArthasLevel = fromCodeLevel(partA)
+		decodedArthasXp = fromCodeXp(partA)
+		decodedThrallLevel = fromCodeLevel(partT)
+		decodedThrallXp = fromCodeXp(partT)
+		decodedTyrandeLevel = fromCodeLevel(partY)
+		decodedTyrandeXp = fromCodeXp(partY)
+		decodedJainaLevel = fromCodeLevel(partJ)
+		decodedJainaXp = fromCodeXp(partJ)
+		lastOk = true
+		return true
+
+	static function decodeSix(string rest) returns bool
+		let p1 = indexOf(rest, "-", 0)
+		if p1 < 0
+			return false
+		let p2 = indexOf(rest, "-", p1 + 1)
+		if p2 < 0
+			return false
+		let p3 = indexOf(rest, "-", p2 + 1)
+		if p3 < 0
+			return false
+		let p4 = indexOf(rest, "-", p3 + 1)
+		if p4 < 0
+			return false
+		let p5 = indexOf(rest, "-", p4 + 1)
+		if p5 < 0
+			return false
+		let p6 = indexOf(rest, "-", p5 + 1)
+		if p6 < 0
+			return false
+		let partA = SubString(rest, 0, p1)
+		let partT = SubString(rest, p1 + 1, p2)
+		let partY = SubString(rest, p2 + 1, p3)
+		let partJ = SubString(rest, p3 + 1, p4)
+		let partI = SubString(rest, p4 + 1, p5)
+		let partW = SubString(rest, p5 + 1, p6)
+		let partSum = SubString(rest, p6 + 1, StringLength(rest))
+		let body = partA + "-" + partT + "-" + partY + "-" + partJ + "-" + partI + "-" + partW
+		if checksum(body) != fromHex(partSum)
+			return false
+		decodedArthasLevel = fromCodeLevel(partA)
+		decodedArthasXp = fromCodeXp(partA)
+		decodedThrallLevel = fromCodeLevel(partT)
+		decodedThrallXp = fromCodeXp(partT)
+		decodedTyrandeLevel = fromCodeLevel(partY)
+		decodedTyrandeXp = fromCodeXp(partY)
+		decodedJainaLevel = fromCodeLevel(partJ)
+		decodedJainaXp = fromCodeXp(partJ)
+		decodedIllidanLevel = fromCodeLevel(partI)
+		decodedIllidanXp = fromCodeXp(partI)
+		decodedWatcherLevel = fromCodeLevel(partW)
+		decodedWatcherXp = fromCodeXp(partW)
+		lastOk = true
+		return true
+
+	static function decodeSeven(string rest) returns bool
+		let p1 = indexOf(rest, "-", 0)
+		if p1 < 0
+			return false
+		let p2 = indexOf(rest, "-", p1 + 1)
+		if p2 < 0
+			return false
+		let p3 = indexOf(rest, "-", p2 + 1)
+		if p3 < 0
+			return false
+		let p4 = indexOf(rest, "-", p3 + 1)
+		if p4 < 0
+			return false
+		let p5 = indexOf(rest, "-", p4 + 1)
+		if p5 < 0
+			return false
+		let p6 = indexOf(rest, "-", p5 + 1)
+		if p6 < 0
+			return false
+		let p7 = indexOf(rest, "-", p6 + 1)
+		if p7 < 0
+			return false
+		let partA = SubString(rest, 0, p1)
+		let partT = SubString(rest, p1 + 1, p2)
+		let partY = SubString(rest, p2 + 1, p3)
+		let partJ = SubString(rest, p3 + 1, p4)
+		let partI = SubString(rest, p4 + 1, p5)
+		let partW = SubString(rest, p5 + 1, p6)
+		let partR = SubString(rest, p6 + 1, p7)
+		let partSum = SubString(rest, p7 + 1, StringLength(rest))
+		let body = partA + "-" + partT + "-" + partY + "-" + partJ + "-" + partI + "-" + partW + "-" + partR
+		if checksum(body) != fromHex(partSum)
+			return false
+		decodedArthasLevel = fromCodeLevel(partA)
+		decodedArthasXp = fromCodeXp(partA)
+		decodedThrallLevel = fromCodeLevel(partT)
+		decodedThrallXp = fromCodeXp(partT)
+		decodedTyrandeLevel = fromCodeLevel(partY)
+		decodedTyrandeXp = fromCodeXp(partY)
+		decodedJainaLevel = fromCodeLevel(partJ)
+		decodedJainaXp = fromCodeXp(partJ)
+		decodedIllidanLevel = fromCodeLevel(partI)
+		decodedIllidanXp = fromCodeXp(partI)
+		decodedWatcherLevel = fromCodeLevel(partW)
+		decodedWatcherXp = fromCodeXp(partW)
+		decodedRexxarLevel = fromCodeLevel(partR)
+		decodedRexxarXp = fromCodeXp(partR)
 		lastOk = true
 		return true
 

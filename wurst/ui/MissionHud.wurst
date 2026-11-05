@@ -10,7 +10,7 @@ public class MissionHud
 
 	static function create()
 		board = CreateMultiboard()
-		board.setTitle("The Last Fortress")
+		board.setTitle("最后的要塞")
 		board.setRowCount(7)
 		board.setColumnCount(2)
 		board.setItemsStyle(true, false)
@@ -24,13 +24,13 @@ public class MissionHud
 		let remainClamped = remainMission < 0. ? 0. : remainMission
 		let nextWave = EnemyDirector.secondsToNextWave(elapsed)
 
-		setCell(0, 0, "Mission")
+		setCell(0, 0, "剩余时间")
 		setCell(0, 1, formatTime(remainClamped))
-		setCell(1, 0, "Next wave")
+		setCell(1, 0, "下一波")
 		setCell(1, 1, formatTime(nextWave))
-		setCell(2, 0, "Outposts")
+		setCell(2, 0, "哨站")
 		setCell(2, 1, outpostsDestroyed.toString() + " / 3")
-		setCell(3, 0, "State")
+		setCell(3, 0, "状态")
 		setCell(3, 1, stateLabel())
 
 		let a = CommanderRegistry.commanderA
@@ -41,8 +41,8 @@ public class MissionHud
 		if b != null
 			setCell(5, 0, b.displayName)
 			setCell(5, 1, b.secondaryResourceName() + ": " + b.secondaryResource.toString())
-		setCell(6, 0, "Tip")
-		setCell(6, 1, "-status for details")
+		setCell(6, 0, "提示")
+		setCell(6, 1, "-status 查看详情")
 
 	static function setCell(int row, int col, string text)
 		board.getItem(row, col)
@@ -62,12 +62,12 @@ public class MissionHud
 	static function stateLabel() returns string
 		switch Lifecycle.state
 			case MissionState.RUNNING
-				return "In Progress"
+				return "进行中"
 			case MissionState.VICTORY
-				return "Victory"
+				return "胜利"
 			case MissionState.DEFEAT
-				return "Defeat"
+				return "失败"
 			case MissionState.SELECTING
-				return "Select"
+				return "选择指挥官"
 			default
-				return "Lobby"
+				return "大厅"

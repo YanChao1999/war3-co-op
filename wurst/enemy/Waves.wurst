@@ -46,5 +46,5 @@ public class Waves
 
 	static function labelFor(int index) returns string
 		if index == Config.FINAL_WAVE_INDEX
-			return "FINAL ASSAULT"
-		return "Wave " + (index + 1).toString()
+			return "最终强袭"
+		return "第 " + (index + 1).toString() + " 波"

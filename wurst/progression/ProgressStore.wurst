@@ -3,10 +3,15 @@ import SaveCode
 import Experience
 import Config
 
-/** In-match progression state loaded from save codes / updated on victory. */
+/** 对局内进度；由存档码载入，胜利后更新。 */
 public class ProgressStore
 	static var arthasXp = 0
 	static var thrallXp = 0
+	static var tyrandeXp = 0
+	static var jainaXp = 0
+	static var illidanXp = 0
+	static var watcherXp = 0
+	static var rexxarXp = 0
 
 	static function arthasLevel() returns int
 		return Experience.levelFromXp(arthasXp)
@@ -14,11 +19,36 @@ public class ProgressStore
 	static function thrallLevel() returns int
 		return Experience.levelFromXp(thrallXp)
 
+	static function tyrandeLevel() returns int
+		return Experience.levelFromXp(tyrandeXp)
+
+	static function jainaLevel() returns int
+		return Experience.levelFromXp(jainaXp)
+
+	static function illidanLevel() returns int
+		return Experience.levelFromXp(illidanXp)
+
+	static function watcherLevel() returns int
+		return Experience.levelFromXp(watcherXp)
+
+	static function rexxarLevel() returns int
+		return Experience.levelFromXp(rexxarXp)
+
 	static function levelFor(string commanderId) returns int
 		if commanderId == Config.ARTHAS_ID
 			return arthasLevel()
 		if commanderId == Config.THRALL_ID
 			return thrallLevel()
+		if commanderId == Config.TYRANDE_ID
+			return tyrandeLevel()
+		if commanderId == Config.JAINA_ID
+			return jainaLevel()
+		if commanderId == Config.ILLIDAN_ID
+			return illidanLevel()
+		if commanderId == Config.WATCHER_ID
+			return watcherLevel()
+		if commanderId == Config.REXXAR_ID
+			return rexxarLevel()
 		return 1
 
 	static function xpFor(string commanderId) returns int
@@ -26,6 +56,16 @@ public class ProgressStore
 			return arthasXp
 		if commanderId == Config.THRALL_ID
 			return thrallXp
+		if commanderId == Config.TYRANDE_ID
+			return tyrandeXp
+		if commanderId == Config.JAINA_ID
+			return jainaXp
+		if commanderId == Config.ILLIDAN_ID
+			return illidanXp
+		if commanderId == Config.WATCHER_ID
+			return watcherXp
+		if commanderId == Config.REXXAR_ID
+			return rexxarXp
 		return 0
 
 	static function addXp(string commanderId, int amount)
@@ -35,18 +75,49 @@ public class ProgressStore
 			arthasXp = Experience.clampXp(arthasXp + amount)
 		else if commanderId == Config.THRALL_ID
 			thrallXp = Experience.clampXp(thrallXp + amount)
+		else if commanderId == Config.TYRANDE_ID
+			tyrandeXp = Experience.clampXp(tyrandeXp + amount)
+		else if commanderId == Config.JAINA_ID
+			jainaXp = Experience.clampXp(jainaXp + amount)
+		else if commanderId == Config.ILLIDAN_ID
+			illidanXp = Experience.clampXp(illidanXp + amount)
+		else if commanderId == Config.WATCHER_ID
+			watcherXp = Experience.clampXp(watcherXp + amount)
+		else if commanderId == Config.REXXAR_ID
+			rexxarXp = Experience.clampXp(rexxarXp + amount)
 
 	static function applySaveCode(string saveCode) returns bool
 		if SaveCode.tryDecode(saveCode) == false
 			return false
 		arthasXp = SaveCode.decodedArthasXp
 		thrallXp = SaveCode.decodedThrallXp
-		// Ensure level floors are respected if xp is low but level was stored higher
+		tyrandeXp = SaveCode.decodedTyrandeXp
+		jainaXp = SaveCode.decodedJainaXp
+		illidanXp = SaveCode.decodedIllidanXp
+		watcherXp = SaveCode.decodedWatcherXp
+		rexxarXp = SaveCode.decodedRexxarXp
 		if Experience.levelFromXp(arthasXp) < SaveCode.decodedArthasLevel
 			arthasXp = Experience.xpToReach(SaveCode.decodedArthasLevel)
 		if Experience.levelFromXp(thrallXp) < SaveCode.decodedThrallLevel
 			thrallXp = Experience.xpToReach(SaveCode.decodedThrallLevel)
+		if Experience.levelFromXp(tyrandeXp) < SaveCode.decodedTyrandeLevel
+			tyrandeXp = Experience.xpToReach(SaveCode.decodedTyrandeLevel)
+		if Experience.levelFromXp(jainaXp) < SaveCode.decodedJainaLevel
+			jainaXp = Experience.xpToReach(SaveCode.decodedJainaLevel)
+		if Experience.levelFromXp(illidanXp) < SaveCode.decodedIllidanLevel
+			illidanXp = Experience.xpToReach(SaveCode.decodedIllidanLevel)
+		if Experience.levelFromXp(watcherXp) < SaveCode.decodedWatcherLevel
+			watcherXp = Experience.xpToReach(SaveCode.decodedWatcherLevel)
+		if Experience.levelFromXp(rexxarXp) < SaveCode.decodedRexxarLevel
+			rexxarXp = Experience.xpToReach(SaveCode.decodedRexxarLevel)
 		return true
 
 	static function currentCode() returns string
-		return SaveCode.encode(arthasLevel(), arthasXp, thrallLevel(), thrallXp)
+		return SaveCode.encodeSeven(
+			arthasLevel(), arthasXp,
+			thrallLevel(), thrallXp,
+			tyrandeLevel(), tyrandeXp,
+			jainaLevel(), jainaXp,
+			illidanLevel(), illidanXp,
+			watcherLevel(), watcherXp,
+			rexxarLevel(), rexxarXp)

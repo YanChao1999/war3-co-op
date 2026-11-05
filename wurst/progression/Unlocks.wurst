@@ -1,52 +1,141 @@
 package Unlocks
 import Config
 
-/** Level unlock flags for MVP commanders (levels 1-5 shipped). */
+/** 指挥官等级解锁文案（中文）。 */
 public class Unlocks
 	static function labelFor(string commanderId, int level) returns string
 		if commanderId == Config.ARTHAS_ID
 			return arthasLabel(level)
 		if commanderId == Config.THRALL_ID
 			return thrallLabel(level)
-		return "Unknown"
+		if commanderId == Config.TYRANDE_ID
+			return tyrandeLabel(level)
+		if commanderId == Config.JAINA_ID
+			return jainaLabel(level)
+		if commanderId == Config.ILLIDAN_ID
+			return illidanLabel(level)
+		if commanderId == Config.WATCHER_ID
+			return watcherLabel(level)
+		if commanderId == Config.REXXAR_ID
+			return rexxarLabel(level)
+		return "未知"
 
 	static function arthasLabel(int level) returns string
 		switch level
 			case 1
-				return "Scourge army"
+				return "天灾大军"
 			case 2
-				return "Necromancers"
+				return "死灵法师"
 			case 3
-				return "Death Coil mastery"
+				return "死亡缠绕专精"
 			case 4
-				return "Halls of the Dead"
+				return "亡者大厅"
 			case 5
-				return "Raise Dead (commander ability)"
+				return "复活亡者（指挥官技能）"
 			case 6
-				return "Abominations (stub)"
+				return "憎恶（占位）"
 			case 10
-				return "Army of the Damned (ultimate)"
+				return "亡灵大军（终极）"
 			default
-				return "Army enhancement"
+				return "军团强化"
 
 	static function thrallLabel(int level) returns string
 		switch level
 			case 1
-				return "Horde army"
+				return "部落大军"
 			case 2
-				return "Raiders"
+				return "狼骑兵"
 			case 3
-				return "Chain Lightning mastery"
+				return "闪电链专精"
 			case 4
-				return "Spirit Lodge"
+				return "灵魂之屋"
 			case 5
-				return "Call Elemental (commander ability)"
+				return "召唤元素（指挥官技能）"
 			case 6
-				return "Tauren (stub)"
+				return "牛头人（占位）"
 			case 10
-				return "Elemental Storm (ultimate)"
+				return "元素风暴（终极）"
 			default
-				return "Army enhancement"
+				return "军团强化"
+
+	static function tyrandeLabel(int level) returns string
+		switch level
+			case 1
+				return "哨兵大军"
+			case 2
+				return "女猎手"
+			case 3
+				return "月神之箭专精"
+			case 4
+				return "古代战争古树"
+			case 5
+				return "伏击（指挥官技能）"
+			case 6
+				return "利爪德鲁伊（占位）"
+			case 10
+				return "月陨（终极）"
+			default
+				return "军团强化"
+
+	static function jainaLabel(int level) returns string
+		switch level
+			case 1
+				return "联盟大军"
+			case 2
+				return "女巫"
+			case 3
+				return "暴风雪专精"
+			case 4
+				return "秘法塔"
+			case 5
+				return "奥术援军（指挥官技能）"
+			case 6
+				return "破法者（占位）"
+			case 10
+				return "暴风雪（终极）"
+			default
+				return "军团强化"
+
+	static function illidanLabel(int level) returns string
+		switch level
+			case 1
+				return "恶魔猎手之路"
+			case 2
+				return "恶魔猎手同伴"
+			case 5
+				return "献祭（友军换邪能）"
+			case 6
+				return "萨特余烬（占位）"
+			case 10
+				return "恶魔变身（终极）"
+			default
+				return "军团强化"
+
+	static function watcherLabel(int level) returns string
+		switch level
+			case 1
+				return "守望者猎队"
+			case 2
+				return "典狱官同伴"
+			case 5
+				return "闪现突袭"
+			case 6
+				return "复仇回响（占位）"
+			case 10
+				return "复仇化身（终极）"
+			default
+				return "军团强化"
+
+	static function rexxarLabel(int level) returns string
+		switch level
+			case 1
+				return "杜隆塔尔三英"
+			case 5
+				return "救回同伴"
+			case 10
+				return "召野兽助战"
+			default
+				return "羁绊强化"
 
 	static function hasUnlock(int level, int required) returns bool
 		return level >= required

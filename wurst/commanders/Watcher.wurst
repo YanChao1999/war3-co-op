@@ -1,0 +1,90 @@
+package Watcher
+import Commander
+import Config
+import SyncRng
+import UnitIds
+import Unit
+import Vectors
+import Angle
+import Printing
+
+/**
+	守望者（玛维）— 复仇经济与猎杀。
+	玩法差异：主要靠己方阵亡积攒复仇（与阿尔萨斯吃敌军相反），闪现改站位并布灵体陷阱。
+*/
+public class Watcher extends Commander
+	construct(player owner)
+		super(owner, Config.WATCHER_ID, Config.displayNameZh(Config.WATCHER_ID))
+
+	override function heroUnitId() returns int
+		return UnitIds.maiev
+
+	override function workerUnitId() returns int
+		return UnitIds.wisp
+
+	override function townHallUnitId() returns int
+		return UnitIds.ancientofwar
+
+	override function secondaryResourceName() returns string
+		return "复仇"
+
+	override function onMissionStart()
+		setupEconomy(basePos)
+		spawnHero(basePos + vec2(64., -64.))
+		createUnit(owner, UnitIds.archer, basePos + vec2(200., -100.), 270..fromDeg())
+		createUnit(owner, UnitIds.huntress, basePos + vec2(260., -100.), 270..fromDeg())
+		if hasUnlock(2)
+			createUnit(owner, UnitIds.warden, basePos + vec2(180., -160.), 270..fromDeg())
+		print("|cff99ff99守望者玛维已就绪。|r 友军阵亡积复仇 | -blink 闪现 | -avatar 复仇化身")
+
+	override function onEnemyKilled(unit killed, vec2 where)
+		if hasUnlock(5) and secondaryResource >= 3 and SyncRng.chance(20)
+			createUnit(owner, UnitIds.spiritofvengeance, where, 270..fromDeg())
+				..setTimedLife(12.)
+
+	override function onAllyDied(unit dying, vec2 where)
+		if dying == hero
+			return
+		if IsUnitType(dying, UNIT_TYPE_STRUCTURE)
+			return
+		addSecondary(Config.VENGEANCE_PER_ALLY_DEATH)
+		if hasUnlock(5) and SyncRng.chance(40)
+			createUnit(owner, UnitIds.spiritofvengeance, where, 270..fromDeg())
+				..setTimedLife(15.)
+			print("|cffcc66ff亡者之怨化为复仇之灵。|r 复仇：" + secondaryResource.toString())
+
+	override function trySpecialAbility()
+		if hasUnlock(5) == false
+			print("|cffffcc00闪现需指挥官达到 5 级解锁。|r")
+			return
+		if spendSecondary(Config.BLINK_COST) == false
+			print("|cffff5555需要 " + Config.BLINK_COST.toString() + " 复仇。|r")
+			return
+		if hero == null or not hero.isAlive()
+			return
+		let face = hero.getFacingAngle()
+		let dest = hero.getPos() + vec2(face.cos() * Config.BLINK_RANGE, face.sin() * Config.BLINK_RANGE)
+		SetUnitPosition(hero, dest.x, dest.y)
+		createUnit(owner, UnitIds.spiritofvengeance, dest + vec2(60., 0.), face)
+			..setTimedLife(18.)
+		createUnit(owner, UnitIds.spiritofvengeance, dest + vec2(-60., 0.), face)
+			..setTimedLife(18.)
+		print("|cff99ccff闪现突袭！|r 复仇：" + secondaryResource.toString())
+
+	override function tryUltimate()
+		if hasUnlock(10) == false
+			print("|cffffcc00复仇化身需指挥官达到 10 级解锁。|r")
+			return
+		if spendSecondary(Config.ULTIMATE_COST) == false
+			print("|cffff5555需要 " + Config.ULTIMATE_COST.toString() + " 复仇。|r")
+			return
+		if hero == null or not hero.isAlive()
+			return
+		let pos = hero.getPos()
+		createUnit(owner, UnitIds.spiritofvengeance, pos + vec2(0., -80.), 270..fromDeg())
+			..setTimedLife(50.)
+		for i = 0 to 5
+			let ang = (i * 60.).fromDeg()
+			createUnit(owner, UnitIds.spiritofvengeance, pos + vec2(130. * ang.cos(), 130. * ang.sin()), 270..fromDeg())
+				..setTimedLife(40.)
+		print("|cffcc66ff复仇化身！|r 以死者之怒猎杀生者。")

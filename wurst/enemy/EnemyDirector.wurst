@@ -52,7 +52,7 @@ public class EnemyDirector
 	static function spawnWave(int index)
 		let tier = Waves.tierFor(index)
 		let count = Compositions.countForTier(tier)
-		print("|cffff6666" + Waves.labelFor(index) + " incoming!|r")
+		print("|cffff6666" + Waves.labelFor(index) + " 来袭！|r")
 		for i = 0 to count - 1
 			let spawn = pickSpawn(index, i)
 			let id = Compositions.unitForTier(tier, i)
@@ -61,7 +61,7 @@ public class EnemyDirector
 			if index == Config.FINAL_WAVE_INDEX and i == 0
 				boss = u
 				bossAlive = true
-				print("|cffcc66ffThe Lich has entered the field!|r")
+				print("|cffcc66ff巫妖已现身战场！|r")
 
 	static function pickSpawn(int waveIndex, int unitIndex) returns vec2
 		if waveIndex == Config.FINAL_WAVE_INDEX

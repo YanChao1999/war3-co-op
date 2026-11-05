@@ -1,0 +1,138 @@
+package Illidan
+import Commander
+import Config
+import UnitIds
+import Unit
+import Group
+import Vectors
+import Angle
+import Printing
+import ClosureTimers
+
+/**
+	伊利丹 — 邪能献祭与恶魔变身。
+	玩法差异：用友军换邪能；变身换成恶魔形态并带来深渊援军，不是单纯攒点召唤。
+*/
+public class Illidan extends Commander
+	bool demonForm = false
+
+	construct(player owner)
+		super(owner, Config.ILLIDAN_ID, Config.displayNameZh(Config.ILLIDAN_ID))
+
+	override function heroUnitId() returns int
+		return UnitIds.illidan
+
+	override function workerUnitId() returns int
+		return UnitIds.wisp
+
+	override function townHallUnitId() returns int
+		return UnitIds.treeoflife
+
+	override function secondaryResourceName() returns string
+		return "邪能"
+
+	override function onMissionStart()
+		setupEconomy(basePos)
+		spawnHero(basePos + vec2(64., -64.))
+		createUnit(owner, UnitIds.archer, basePos + vec2(200., -100.), 270..fromDeg())
+		createUnit(owner, UnitIds.huntress, basePos + vec2(260., -100.), 270..fromDeg())
+		if hasUnlock(2)
+			createUnit(owner, UnitIds.demonhunter, basePos + vec2(180., -160.), 270..fromDeg())
+		print("|cff99ff99伊利丹已就绪。|r -consume 献祭友军换邪能 | -meta 恶魔变身")
+
+	override function onEnemyKilled(unit killed, vec2 where)
+		addSecondary(1)
+
+	override function trySpecialAbility()
+		if hasUnlock(5) == false
+			print("|cffffcc00献祭需指挥官达到 5 级解锁。|r")
+			return
+		let victim = findSacrificeTarget()
+		if victim == null
+			print("|cffff5555附近没有可献祭的友军（非英雄/工人）。|r")
+			return
+		let pos = victim.getPos()
+		victim.kill()
+		addSecondary(Config.CONSUME_FEL_GAIN)
+		if hero != null and hero.isAlive()
+			SetUnitState(hero, UNIT_STATE_LIFE, GetUnitState(hero, UNIT_STATE_LIFE) + 120.)
+		createUnit(owner, UnitIds.satyrshadowdancer, pos, 270..fromDeg())
+			..setTimedLife(20.)
+		print("|cffff6600献祭完成！|r 邪能：" + secondaryResource.toString() + "（友军换力量）")
+
+	override function tryUltimate()
+		if hasUnlock(10) == false
+			print("|cffffcc00恶魔变身需指挥官达到 10 级解锁。|r")
+			return
+		if demonForm
+			print("|cffffcc00已在恶魔形态中。|r")
+			return
+		if spendSecondary(Config.ULTIMATE_COST) == false
+			print("|cffff5555需要 " + Config.ULTIMATE_COST.toString() + " 邪能。|r")
+			return
+		if hero == null or not hero.isAlive()
+			return
+		enterDemonForm()
+
+	function enterDemonForm()
+		demonForm = true
+		let pos = hero.getPos()
+		let facing = hero.getFacingAngle()
+		let maxHp = GetUnitState(hero, UNIT_STATE_MAX_LIFE)
+		var lifePct = 0.5
+		if maxHp > 0.
+			lifePct = GetUnitState(hero, UNIT_STATE_LIFE) / maxHp
+		if lifePct < 0.25
+			lifePct = 0.25
+		RemoveUnit(hero)
+		hero = createUnit(owner, UnitIds.illidandemonform, pos, facing)
+		SetUnitState(hero, UNIT_STATE_LIFE, GetUnitState(hero, UNIT_STATE_MAX_LIFE) * lifePct)
+		createUnit(owner, UnitIds.doomguard, pos + vec2(120., 0.), facing)
+			..setTimedLife(Config.META_DURATION)
+		createUnit(owner, UnitIds.infernal, pos + vec2(-120., 0.), facing)
+			..setTimedLife(Config.META_DURATION)
+		print("|cffff3300恶魔变身！|r " + Config.META_DURATION.toInt().toString() + " 秒魔形 + 深渊援军。")
+		doAfter(Config.META_DURATION) ->
+			exitDemonForm()
+
+	function exitDemonForm()
+		if demonForm == false
+			return
+		demonForm = false
+		if hero == null or not hero.isAlive()
+			hero = createUnit(owner, UnitIds.illidan, basePos + vec2(64., -64.), 270..fromDeg())
+			print("|cffaaaaaa恶魔形态结束。伊利丹以精灵之躯重塑。|r")
+			return
+		let pos = hero.getPos()
+		let facing = hero.getFacingAngle()
+		let maxHp = GetUnitState(hero, UNIT_STATE_MAX_LIFE)
+		var lifePct = 0.4
+		if maxHp > 0.
+			lifePct = GetUnitState(hero, UNIT_STATE_LIFE) / maxHp
+		if lifePct < 0.2
+			lifePct = 0.2
+		RemoveUnit(hero)
+		hero = createUnit(owner, UnitIds.illidan, pos, facing)
+		SetUnitState(hero, UNIT_STATE_LIFE, GetUnitState(hero, UNIT_STATE_MAX_LIFE) * lifePct)
+		print("|cff88ff88恶魔形态消退。|r")
+
+	function findSacrificeTarget() returns unit
+		if hero == null
+			return null
+		let g = CreateGroup()
+		g.enumUnitsInRange(hero.getPos(), 700.)
+		var found = false
+		var best = hero
+		var bestDist = 99999.
+		for u in g
+			if GetOwningPlayer(u) == owner and u != hero and u.isAlive()
+				if not IsUnitType(u, UNIT_TYPE_HERO) and not IsUnitType(u, UNIT_TYPE_PEON) and not IsUnitType(u, UNIT_TYPE_STRUCTURE)
+					let d = hero.getPos().distanceTo(u.getPos())
+					if d < bestDist
+						bestDist = d
+						best = u
+						found = true
+		g.destr()
+		if found
+			return best
+		return null

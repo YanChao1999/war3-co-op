@@ -8,10 +8,10 @@ import Vectors
 import Angle
 import Printing
 
-/** Scourge commander — raise dead, souls, undead army. */
+/** 天灾指挥官 — 复活亡者、灵魂与亡灵大军。 */
 public class Arthas extends Commander
 	construct(player owner)
-		super(owner, Config.ARTHAS_ID, "Arthas")
+		super(owner, Config.ARTHAS_ID, Config.displayNameZh(Config.ARTHAS_ID))
 
 	override function heroUnitId() returns int
 		return UnitIds.deathknight
@@ -23,7 +23,7 @@ public class Arthas extends Commander
 		return UnitIds.necropolis
 
 	override function secondaryResourceName() returns string
-		return "Souls"
+		return "灵魂"
 
 	override function onMissionStart()
 		setupEconomy(basePos)
@@ -32,7 +32,7 @@ public class Arthas extends Commander
 		createUnit(owner, UnitIds.ghoul, basePos + vec2(260., -100.), 270..fromDeg())
 		if hasUnlock(2)
 			createUnit(owner, UnitIds.necromancer, basePos + vec2(180., -160.), 270..fromDeg())
-		print("|cff99ff99Arthas ready.|r Type -raise / -army")
+		print("|cff99ff99阿尔萨斯已就绪。|r 指令：-raise / -army（复活 / 亡灵大军）")
 
 	override function onEnemyKilled(unit killed, vec2 where)
 		addSecondary(Config.SOULS_PER_KILL)
@@ -41,10 +41,10 @@ public class Arthas extends Commander
 
 	override function trySpecialAbility()
 		if hasUnlock(5) == false
-			print("|cffffcc00Raise Dead unlocks at commander level 5.|r")
+			print("|cffffcc00复活亡者需指挥官达到 5 级解锁。|r")
 			return
 		if spendSecondary(Config.RAISE_COST) == false
-			print("|cffff5555Need " + Config.RAISE_COST.toString() + " Souls.|r")
+			print("|cffff5555需要 " + Config.RAISE_COST.toString() + " 灵魂。|r")
 			return
 		if hero == null or not hero.isAlive()
 			return
@@ -52,14 +52,14 @@ public class Arthas extends Commander
 		createUnit(owner, UnitIds.ghoul, pos + vec2(100., 0.), 270..fromDeg())
 		createUnit(owner, UnitIds.skeletonwarrior, pos + vec2(-100., 0.), 270..fromDeg())
 		createUnit(owner, UnitIds.skeletonwarrior, pos + vec2(0., 100.), 270..fromDeg())
-		print("|cff99ff99Raise Dead!|r Souls: " + secondaryResource.toString())
+		print("|cff99ff99复活亡者！|r 灵魂：" + secondaryResource.toString())
 
 	override function tryUltimate()
 		if hasUnlock(10) == false
-			print("|cffffcc00Army of the Damned unlocks at commander level 10.|r")
+			print("|cffffcc00亡灵大军需指挥官达到 10 级解锁。|r")
 			return
 		if spendSecondary(Config.ULTIMATE_COST) == false
-			print("|cffff5555Need " + Config.ULTIMATE_COST.toString() + " Souls.|r")
+			print("|cffff5555需要 " + Config.ULTIMATE_COST.toString() + " 灵魂。|r")
 			return
 		if hero == null or not hero.isAlive()
 			return
@@ -70,4 +70,4 @@ public class Arthas extends Commander
 		createUnit(owner, UnitIds.abomination, pos + vec2(0., -150.), 270..fromDeg())
 		if hasUnlock(6)
 			createUnit(owner, UnitIds.abomination, pos + vec2(150., -150.), 270..fromDeg())
-		print("|cffcc66ffArmy of the Damned!|r")
+		print("|cffcc66ff亡灵大军！|r")

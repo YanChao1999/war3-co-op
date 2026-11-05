@@ -7,10 +7,10 @@ import Vectors
 import Angle
 import Printing
 
-/** Horde commander — elementals, spirit energy, aggressive orc army. */
+/** 部落指挥官 — 元素之力与进攻型兽人大军。 */
 public class Thrall extends Commander
 	construct(player owner)
-		super(owner, Config.THRALL_ID, "Thrall")
+		super(owner, Config.THRALL_ID, Config.displayNameZh(Config.THRALL_ID))
 
 	override function heroUnitId() returns int
 		return UnitIds.thrall
@@ -22,7 +22,7 @@ public class Thrall extends Commander
 		return UnitIds.greathall
 
 	override function secondaryResourceName() returns string
-		return "Spirit Energy"
+		return "灵能"
 
 	override function onMissionStart()
 		setupEconomy(basePos)
@@ -31,31 +31,31 @@ public class Thrall extends Commander
 		createUnit(owner, UnitIds.grunt, basePos + vec2(260., -100.), 270..fromDeg())
 		if hasUnlock(2)
 			createUnit(owner, UnitIds.wolfrider, basePos + vec2(180., -160.), 270..fromDeg())
-		print("|cff99ff99Thrall ready.|r Type -elemental / -storm")
+		print("|cff99ff99萨尔已就绪。|r 指令：-elemental / -storm（召唤元素 / 元素风暴）")
 
 	override function onEnemyKilled(unit killed, vec2 where)
 		addSecondary(Config.SPIRIT_PER_KILL)
 
 	override function trySpecialAbility()
 		if hasUnlock(5) == false
-			print("|cffffcc00Call Elemental unlocks at commander level 5.|r")
+			print("|cffffcc00召唤元素需指挥官达到 5 级解锁。|r")
 			return
 		if spendSecondary(Config.ELEMENTAL_COST) == false
-			print("|cffff5555Need " + Config.ELEMENTAL_COST.toString() + " Spirit Energy.|r")
+			print("|cffff5555需要 " + Config.ELEMENTAL_COST.toString() + " 灵能。|r")
 			return
 		if hero == null or not hero.isAlive()
 			return
 		let pos = hero.getPos()
 		createUnit(owner, UnitIds.waterelemental2, pos + vec2(80., 0.), 270..fromDeg())
 			..setTimedLife(45.)
-		print("|cff66ccffElemental summoned!|r Spirit: " + secondaryResource.toString())
+		print("|cff66ccff元素已召唤！|r 灵能：" + secondaryResource.toString())
 
 	override function tryUltimate()
 		if hasUnlock(10) == false
-			print("|cffffcc00Elemental Storm unlocks at commander level 10.|r")
+			print("|cffffcc00元素风暴需指挥官达到 10 级解锁。|r")
 			return
 		if spendSecondary(Config.ULTIMATE_COST) == false
-			print("|cffff5555Need " + Config.ULTIMATE_COST.toString() + " Spirit Energy.|r")
+			print("|cffff5555需要 " + Config.ULTIMATE_COST.toString() + " 灵能。|r")
 			return
 		if hero == null or not hero.isAlive()
 			return
@@ -66,4 +66,4 @@ public class Thrall extends Commander
 				..setTimedLife(40.)
 		if hasUnlock(6)
 			createUnit(owner, UnitIds.tauren, pos + vec2(0., -120.), 270..fromDeg())
-		print("|cff66ccffElemental Storm!|r")
+		print("|cff66ccff元素风暴！|r")

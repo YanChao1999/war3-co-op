@@ -33,6 +33,9 @@ public abstract class Commander
 	abstract function trySpecialAbility()
 	abstract function tryUltimate()
 
+	/** Optional hook: own army unit died (守望者复仇经济等). */
+	function onAllyDied(unit dying, vec2 where)
+
 	function setupEconomy(vec2 pos)
 		this.basePos = pos
 		CoopPlayer.giveStartingResources(owner)
@@ -45,7 +48,7 @@ public abstract class Commander
 
 	function spawnHero(vec2 pos)
 		hero = createUnit(owner, heroUnitId(), pos, 270..fromDeg())
-		print(GetPlayerName(owner) + " commands " + displayName + " (Lv " + level.toString() + ")")
+		print(GetPlayerName(owner) + " 执掌 " + displayName + "（" + level.toString() + "级）")
 
 	function addSecondary(int amount)
 		if amount == 0
