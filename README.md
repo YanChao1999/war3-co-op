@@ -1,14 +1,15 @@
 # Warcraft III: Co-op Commanders
 
-Classic / The Frozen Throne custom map — SC2-inspired **Co-op Commanders** MVP.
+SC2-inspired **要塞联防**（合作指挥官）MVP custom map.
 
 **任务：** 最后的要塞  
-**指挥官：** 阿尔萨斯 / 萨尔 / 泰兰德 / 吉安娜 / 伊利丹 / 守望者 / 雷克萨
+**指挥官：** 阿尔萨斯 / 萨尔 / 泰兰德 / 吉安娜 / 伊利丹 / 守望者 / 雷克萨  
+**客户端：** 推荐能开自定义的经典端；纯 1.27a 仍可能因引擎 API 差异进图后退出（构建已不再破坏 MPQ，应能创建游戏）。
 
 ## Play (quick)
 
 1. Build the map (below) or use a released `dist/coop_last_fortress.w3x`.
-2. Host a Custom Game with **2 players** on slots 1–2.
+2. Host Custom Game：槽位1–2 指挥官（单人可把槽2改电脑 + `-autostart`）。
 3. In-game chat:
    - `-pick arthas|thrall|tyrande|jaina|illidan|watcher|rexxar`（或中文名，不可重复）
    - optional `-load W3C7-....` for progression

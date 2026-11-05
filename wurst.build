@@ -1,13 +1,15 @@
 projectName: war3-coop
 dependencies:
   - https://github.com/wurstscript/wurstStdlib2
+# Compile against 1.31 APIs (Wurst/stdlib). Keep map MPQ untouched so 1.27a can CREATE the game.
+# Runtime: Group helpers are patched to avoid BlzGroup*; remaining BlzBitOr is polyfilled in-script via tools.
 wc3Patch: v1.31
 buildMapData:
   name: "WC3 Co-op | The Last Fortress"
   fileName: coop_last_fortress
   author: war3-coop
   scenarioData:
-    description: "Two commanders defend a fortress against the Scourge. Arthas and Thrall."
+    description: "Two commanders defend a fortress against the Scourge."
     suggestedPlayers: "2"
   players:
     - id: 0

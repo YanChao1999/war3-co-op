@@ -21,7 +21,7 @@ PY
   chmod +x .tools/wurst-compiler/wurstscript .tools/wurst-compiler/grill .tools/wurst-compiler/wurst-runtime/bin/java || true
 fi
 
-mkdir -p .tools/jass
+mkdir -p .tools/jass .tools/jass/1.27a
 python3 - <<PY
 import zipfile, os
 root = '$ROOT'
@@ -31,8 +31,20 @@ if not os.path.isfile(jar):
 z = zipfile.ZipFile(jar)
 for name in ['common.j', 'blizzard.j']:
     open(os.path.join(root, '.tools/jass', name), 'wb').write(z.read(name))
-    print('extracted', name)
+    print('extracted jar', name)
 PY
+
+# Classic 1.27a natives (no Blz*) — required for 1.27a clients.
+echo "Downloading TFT 1.27a common.j / Blizzard.j ..."
+curl -fsSL --max-time 60 \
+  "https://raw.githubusercontent.com/wurstscript/jass-history/master/war3extract/TFT-v1.27a-ru/Scripts/common.j" \
+  -o .tools/jass/1.27a/common.j
+curl -fsSL --max-time 60 \
+  "https://raw.githubusercontent.com/wurstscript/jass-history/master/war3extract/TFT-v1.27a-ru/Scripts/Blizzard.j" \
+  -o .tools/jass/1.27a/blizzard.j
+cp -f .tools/jass/1.27a/common.j .tools/jass/common.j
+cp -f .tools/jass/1.27a/blizzard.j .tools/jass/blizzard.j
+echo "1.27a jass ready."
 
 if [[ ! -d _build/dependencies/wurstStdlib2/wurst ]]; then
   echo "Downloading WurstStdlib2..."

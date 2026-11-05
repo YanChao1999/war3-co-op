@@ -24,6 +24,22 @@ fi
 
 mkdir -p "$ROOT/dist" "$ROOT/_build"
 
+# 1.31 common.j for compile (stdlib requires it). Do not binary-patch the MPQ —
+# that previously made 1.27a unable to create the game.
+if [[ -f "$JASS/1.31/common.j" ]]; then
+  COMMON_J="$JASS/1.31/common.j"
+  BLIZZ_J="$JASS/1.31/blizzard.j"
+else
+  COMMON_J="$JASS/common.j"
+  BLIZZ_J="$JASS/blizzard.j"
+fi
+cp -f "$COMMON_J" "$ROOT/_build/common.j"
+cp -f "$BLIZZ_J" "$ROOT/_build/blizzard.j"
+echo "Using compile natives from: $COMMON_J"
+
+# Replace BlzGroup* helpers with ForGroup fallbacks (still valid on 1.31 / 1.27a).
+python3 "$ROOT/tools/patch_stdlib_127a.py"
+
 echo "Building $MAP_OUT from $MAP_IN ..."
 set +e
 "$WURST" \
@@ -35,8 +51,8 @@ set +e
   -stacktraces \
   -noPJass \
   -lib "$LIB" \
-  "$JASS/common.j" \
-  "$JASS/blizzard.j" \
+  "$COMMON_J" \
+  "$BLIZZ_J" \
   "$ROOT/wurst"
 status=$?
 set -e
@@ -45,21 +61,28 @@ if [[ $status -ne 0 ]]; then
   exit $status
 fi
 
-# Prefer compiler-chosen output if present
 if [[ -f "$ROOT/_build/coop_last_fortress.w3x" ]]; then
   cp -f "$ROOT/_build/coop_last_fortress.w3x" "$MAP_OUT"
 elif [[ -f "$ROOT/_build/LastFortress.w3x" ]]; then
   cp -f "$ROOT/_build/LastFortress.w3x" "$MAP_OUT"
 else
-  # Fallback: some builds overwrite adjacent to input
   found="$(find "$ROOT/_build" -name '*.w3x' | head -1 || true)"
   if [[ -n "$found" ]]; then
     cp -f "$found" "$MAP_OUT"
   else
-    echo "Build finished but no output map found under _build/. Check compiler log."
+    echo "Build finished but no output map found under _build/."
     exit 1
   fi
 fi
 
-echo "OK: $MAP_OUT"
+if [[ -f "$ROOT/_build/02_compiled.j.txt" ]] && rg -q "BlzGroup" "$ROOT/_build/02_compiled.j.txt"; then
+  echo "ERROR: BlzGroup* still in script"
+  rg -n "BlzGroup" "$ROOT/_build/02_compiled.j.txt" | head
+  exit 1
+fi
+
+echo "OK: $MAP_OUT (clean MPQ, no binary strip)"
+if [[ -f "$ROOT/_build/02_compiled.j.txt" ]] && rg -q "BlzBitOr" "$ROOT/_build/02_compiled.j.txt"; then
+  echo "NOTE: script still calls BlzBitOr (1.27a may exit after start). Create-game should work."
+fi
 ls -la "$MAP_OUT"

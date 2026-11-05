@@ -3,19 +3,19 @@ import EnemyDirector
 import Lifecycle
 import Config
 import CommanderRegistry
-import Multiboard
 
+/** Multiboard HUD — use natives so 1.27a builds avoid Framehandle.show() clashes. */
 public class MissionHud
 	static multiboard board = null
 
 	static function create()
 		board = CreateMultiboard()
-		board.setTitle("最后的要塞")
-		board.setRowCount(7)
-		board.setColumnCount(2)
-		board.setItemsStyle(true, false)
-		board.setItemsWidth(0.10)
-		board.show()
+		MultiboardSetTitleText(board, "最后的要塞")
+		MultiboardSetRowCount(board, 7)
+		MultiboardSetColumnCount(board, 2)
+		MultiboardSetItemsStyle(board, true, false)
+		MultiboardSetItemsWidth(board, 0.10)
+		MultiboardDisplay(board, true)
 
 	static function refresh(real elapsed, int outpostsDestroyed)
 		if board == null
@@ -45,10 +45,10 @@ public class MissionHud
 		setCell(6, 1, "-status 查看详情")
 
 	static function setCell(int row, int col, string text)
-		board.getItem(row, col)
-			..setValue(text)
-			..setStyle(true, false)
-			..release()
+		let mbItem = MultiboardGetItem(board, row, col)
+		MultiboardSetItemValue(mbItem, text)
+		MultiboardSetItemStyle(mbItem, true, false)
+		MultiboardReleaseItem(mbItem)
 
 	static function formatTime(real seconds) returns string
 		let clamped = seconds < 0. ? 0. : seconds
