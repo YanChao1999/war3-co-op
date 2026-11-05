@@ -15,6 +15,7 @@ import Angle
 import Printing
 import Player
 import ClosureEvents
+import CoopLog
 
 /** MVP mission: defend the fortress for 25 minutes, optional outposts, final boss. */
 public class LastFortress extends Mission
@@ -38,17 +39,24 @@ public class LastFortress extends Mission
 
 	override function initialize()
 		active = this
+		CoopLog.line("LF: SyncRng")
 		SyncRng.seedFromGame()
+		CoopLog.line("LF: alliances")
 		CoopPlayer.setupAlliances()
+		CoopLog.line("LF: layout")
 		computeLayout()
+		CoopLog.line("LF: fortress/outposts")
 		createFortressAndOutposts()
 		assignBases()
+		CoopLog.line("LF: commanders start")
 		CommanderRegistry.startAll()
 		EnemyDirector.configure(mapCenter, mapCenter + vec2(0., 1800.), mapCenter + vec2(1800., 0.), mapCenter + vec2(-1800., 0.))
+		CoopLog.line("LF: HUD")
 		MissionHud.create()
 		MissionHud.refresh(0., 0)
 		registerDeathEvents()
 		Lifecycle.setState(MissionState.RUNNING)
+		CoopLog.line("LF: RUNNING")
 		print("|cffffff00坚守要塞 25:00。摧毁 3 座哨站可获额外经验。撑过最终强袭。|r")
 		print("技能：阿raise/army 萨elemental/storm 泰ambush/lunar 吉arcane/blizzard 伊consume/meta 守blink/avatar 雷revive/beasts")
 

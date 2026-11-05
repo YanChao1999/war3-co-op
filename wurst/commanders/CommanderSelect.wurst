@@ -4,6 +4,7 @@ import CoopPlayer
 import CommanderRegistry
 import ProgressStore
 import Lifecycle
+import CoopLog
 import Player
 import Trigger
 import Printing
@@ -22,13 +23,20 @@ public class CommanderSelect
 	static LastFortress mission = null
 
 	static function startLobby()
+		CoopLog.line("startLobby 开始")
+		CoopLog.disableEngineAlliedVictory()
+		CoopLog.logSlots()
+		CoopLog.logCommanderSlots()
 		Lifecycle.setState(MissionState.SELECTING)
-		print("|cffffff00要塞联防 — 最后的要塞|r（1.27a）")
+		print("|cffffff00要塞联防 — 最后的要塞|r")
 		print("选择：-pick arthas/thrall/tyrande/jaina/illidan/watcher/rexxar")
 		print("中文：阿尔萨斯/萨尔/泰兰德/吉安娜/伊利丹/守望者/雷克萨（不可重复）")
-		print("进度：-load W3C7-...    单人：-autostart（另一槽可改电脑）")
+		print("进度：-load W3C7-...    单人：-autostart（槽2可改电脑；天灾槽请保持电脑）")
+		print("调试：看聊天里 [联防 #N]，退出前最后一条很有用")
 		registerChat()
+		CoopLog.line("聊天监听已注册")
 		fillComputerPicks()
+		CoopLog.line("大厅就绪，等待 -pick / -autostart")
 		doPeriodically(1.) (_) ->
 			if started
 				return
@@ -131,14 +139,19 @@ public class CommanderSelect
 		if pickA == pickB
 			print("|cffff5555指挥官不可重复，请重新选择。|r")
 			return
+		CoopLog.line("tryStart " + pickA + " + " + pickB)
 		CommanderRegistry.assign(Config.COMMANDER_SLOT_A, pickA)
 		CommanderRegistry.assign(Config.COMMANDER_SLOT_B, pickB)
 		if CommanderRegistry.uniqueCommanders() == false
 			print("|cffff5555指挥官分配失败。|r")
+			CoopLog.line("分配失败")
 			return
 		started = true
+		CoopLog.line("创建 LastFortress…")
 		mission = new LastFortress()
+		CoopLog.line("mission.initialize…")
 		mission.initialize()
+		CoopLog.line("任务已开始 RUNNING")
 		doPeriodically(0.5) (_) ->
 			if mission != null and Lifecycle.isRunning()
 				mission.update(0.5)

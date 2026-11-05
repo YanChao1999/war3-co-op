@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Rewrite wurstStdlib2 Group helpers to avoid Blz* natives (1.27a-safe)."""
+"""Patch wurstStdlib2 for classic 1.27a (no BlzGroup* / BlzBit*)."""
 from __future__ import annotations
 
 import pathlib
@@ -7,8 +7,9 @@ import sys
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 GROUP = ROOT / "_build/dependencies/wurstStdlib2/wurst/_handles/Group.wurst"
+INTEGER = ROOT / "_build/dependencies/wurstStdlib2/wurst/_handles/primitives/Integer.wurst"
 
-CLASSIC_BLOCK = '''
+CLASSIC_GROUP_BLOCK = '''
 int groupSizeResult = 0
 int groupGetIndex = 0
 int groupGetCursor = 0
@@ -93,19 +94,55 @@ public function group.get(int index) returns unit
 '''
 
 
-def main() -> int:
+def patch_group() -> None:
 	if not GROUP.is_file():
-		print("missing", GROUP, file=sys.stderr)
-		return 1
+		raise SystemExit(f"missing {GROUP}")
 	text = GROUP.read_text(encoding="utf-8")
 	if "BlzGroupGetSize" not in text:
 		print("Group.wurst already classic-safe")
-		return 0
+		return
 	start = text.index("public function group.size() returns int")
 	end = text.index("/* Group iterator */")
-	patched = text[:start] + CLASSIC_BLOCK.strip() + "\n\n" + text[end:]
-	GROUP.write_text(patched, encoding="utf-8")
-	print("patched", GROUP, "for 1.27a (no BlzGroup*)")
+	GROUP.write_text(text[:start] + CLASSIC_GROUP_BLOCK.strip() + "\n\n" + text[end:], encoding="utf-8")
+	print("patched Group.wurst (no BlzGroup*)")
+
+
+def patch_integer() -> None:
+	if not INTEGER.is_file():
+		raise SystemExit(f"missing {INTEGER}")
+	text = INTEGER.read_text(encoding="utf-8")
+	if "BlzBitOr" not in text and "and32(other)" in text:
+		print("Integer.wurst already classic-safe")
+		return
+	if "import initlater Bitwise" not in text and "import Bitwise" not in text:
+		text = text.replace("import Real\n", "import Real\nimport initlater Bitwise\n", 1)
+	elif "import Bitwise" in text and "import initlater Bitwise" not in text:
+		text = text.replace("import Bitwise", "import initlater Bitwise")
+	text = text.replace(
+		"public function int.bitAnd(int other) returns int\n\treturn BlzBitAnd(this, other)",
+		"public function int.bitAnd(int other) returns int\n\treturn this.and32(other)",
+	)
+	text = text.replace(
+		"public function int.bitOr(int other) returns int\n\treturn BlzBitOr(this, other)",
+		"public function int.bitOr(int other) returns int\n\treturn this.or32(other)",
+	)
+	text = text.replace(
+		"public function int.bitXor(int other) returns int\n\treturn BlzBitXor(this, other)",
+		"public function int.bitXor(int other) returns int\n\treturn this.xor32(other)",
+	)
+	text = text.replace(
+		"public function int.isOdd() returns boolean\n\treturn BlzBitAnd(this, 1) == 1",
+		"public function int.isOdd() returns boolean\n\treturn this.and32(1) == 1",
+	)
+	if "BlzBit" in text:
+		raise SystemExit("Integer.wurst still references BlzBit* after patch")
+	INTEGER.write_text(text, encoding="utf-8")
+	print("patched Integer.wurst (no BlzBit*, initlater Bitwise)")
+
+
+def main() -> int:
+	patch_group()
+	patch_integer()
 	return 0
 
 

@@ -1,10 +1,14 @@
 package Main
 import CommanderSelect
+import CoopLog
 import Printing
 import ClosureTimers
 
 init
-	print("|cff88ccffWarcraft III: Co-op Commanders|r")
+	CoopLog.bootBanner()
+	CoopLog.line("Main.init — 准备延迟进入大厅")
 	// Delay one tick so player slots / start locations are ready
 	nullTimer() ->
+		CoopLog.line("nullTimer 触发 — 进入大厅")
 		CommanderSelect.startLobby()
+		CoopLog.line("startLobby 返回")

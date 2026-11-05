@@ -1,0 +1,68 @@
+package CoopLog
+import Printing
+import Player
+import Config
+
+/**
+	Boot / lobby diagnostics. Messages show in the chat log.
+	Send the last [联防 #N] line if the game exits early.
+*/
+public class CoopLog
+	static var logN = 0
+
+	static function line(string msg)
+		logN++
+		print("|cff88ff88[联防 #" + logN.toString() + "]|r " + msg)
+
+	static function yn(bool v) returns string
+		if v
+			return "yes"
+		return "no"
+
+	static function bootBanner()
+		logN = 0
+		line("脚本启动 OK — 若中途退出，请记下最后一条编号")
+
+	static function logSlots()
+		line("扫描玩家槽位…")
+		for i = 0 to 11
+			let p = players[i]
+			let state = GetPlayerSlotState(p)
+			let ctrl = GetPlayerController(p)
+			var stateName = "?"
+			if state == PLAYER_SLOT_STATE_EMPTY
+				stateName = "EMPTY"
+			else if state == PLAYER_SLOT_STATE_PLAYING
+				stateName = "PLAYING"
+			else if state == PLAYER_SLOT_STATE_LEFT
+				stateName = "LEFT"
+			var ctrlName = "?"
+			if ctrl == MAP_CONTROL_USER
+				ctrlName = "USER"
+			else if ctrl == MAP_CONTROL_COMPUTER
+				ctrlName = "COMPUTER"
+			else if ctrl == MAP_CONTROL_RESCUABLE
+				ctrlName = "RESCUABLE"
+			else if ctrl == MAP_CONTROL_NEUTRAL
+				ctrlName = "NEUTRAL"
+			else if ctrl == MAP_CONTROL_NONE
+				ctrlName = "NONE"
+			if state != PLAYER_SLOT_STATE_EMPTY
+				line("P" + i.toString() + " " + GetPlayerName(p) + " state=" + stateName + " ctrl=" + ctrlName)
+
+	static function disableEngineAlliedVictory()
+		line("关闭 AlliedVictory（避免加载页直接 Game Over）")
+		for i = 0 to 11
+			SetPlayerState(players[i], PLAYER_STATE_ALLIED_VICTORY, 0)
+
+	static function logCommanderSlots()
+		let a = players[Config.COMMANDER_SLOT_A]
+		let b = players[Config.COMMANDER_SLOT_B]
+		let e = players[Config.ENEMY_SLOT]
+		line("指挥官A(P0) playing=" + yn(GetPlayerSlotState(a) == PLAYER_SLOT_STATE_PLAYING))
+		line("指挥官B(P1) playing=" + yn(GetPlayerSlotState(b) == PLAYER_SLOT_STATE_PLAYING))
+		line("天灾(P10) playing=" + yn(GetPlayerSlotState(e) == PLAYER_SLOT_STATE_PLAYING))
+		if GetPlayerSlotState(e) != PLAYER_SLOT_STATE_PLAYING
+			line("|cffff5555警告：天灾槽空 — 引擎可能直接判胜|r")
+		if GetPlayerSlotState(b) != PLAYER_SLOT_STATE_PLAYING
+			line("|cffffff00提示：槽2空 — 输入 -autostart 或把槽2设为电脑|r")
